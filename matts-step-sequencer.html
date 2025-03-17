@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Indie Melodic Step Sequencer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 10px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            margin-bottom: 30px;
+        }
+        
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        button {
+            background-color: #4CAF50;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #45a049;
+        }
+        
+        button:active {
+            background-color: #3e8e41;
+        }
+        
+        button#stop {
+            background-color: #f44336;
+        }
+        
+        button#stop:hover {
+            background-color: #d32f2f;
+        }
+        
+        button#clear {
+            background-color: #607d8b;
+        }
+        
+        button#clear:hover {
+            background-color: #455a64;
+        }
+        
+        input[type="range"] {
+            width: 150px;
+        }
+        
+        .tempo-value {
+            min-width: 60px;
+        }
+        
+        .sequencer {
+            display: grid;
+            grid-template-columns: auto repeat(16, 1fr);
+            gap: 4px;
+            background-color: #1e1e1e;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            max-height: 70vh;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            font-weight: bold;
+            padding-right: 10px;
+            min-width: 100px;
+        }
+        
+        .beat {
+            width: 40px;
+            height: 40px;
+            background-color: #333;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.1s;
+        }
+        
+        .beat.active {
+            background-color: #4CAF50;
+            box-shadow: 0 0 5px #4CAF50;
+        }
+        
+        .beat.playing {
+            background-color: #2196F3;
+            box-shadow: 0 0 5px #2196F3;
+        }
+        
+        .beat.active.playing {
+            background-color: #E91E63;
+            box-shadow: 0 0 10px #E91E63;
+        }
+        
+        /* Different colors for melodic instruments */
+        .beat.melodic.active {
+            background-color: #9C27B0;
+            box-shadow: 0 0 5px #9C27B0;
+        }
+        
+        .beat.melodic.active.playing {
+            background-color: #E91E63;
+            box-shadow: 0 0 10px #E91E63;
+        }
+        
+        .beat-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #888;
+            height: 25px;
+        }
+        
+        .beat-number.quarter {
+            color: #ddd;
+            font-weight: bold;
+        }
+        
+        .section-divider {
+            grid-column: 1 / -1;
+            height: 1px;
+            background-color: #444;
+            margin: 8px 0;
+        }
+        
+        .section-label {
+            grid-column: 1 / -1;
+            color: #888;
+            font-size: 14px;
+            margin: 8px 0 4px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        @media (max-width: 900px) {
+            .beat {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .sequencer {
+                padding: 10px;
+            }
+            
+            .label {
+                min-width: 80px;
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 24px;
+                margin-bottom: 15px;
+            }
+        }
+        
+        @media (max-width: 700px) {
+            .beat {
+                width: 22px;
+                height: 22px;
+            }
+            
+            .label {
+                min-width: 60px;
+                font-size: 12px;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            button {
+                padding: 8px 12px;
+                font-size: 14px;
+            }
+            
+            h1 {
+                font-size: 20px;
+                margin-bottom: 10px;
+            }
+        }
+        
+        @media (max-width: 500px) {
+            .beat {
+                width: 18px;
+                height: 18px;
+            }
+            
+            .label {
+                min-width: 50px;
+                font-size: 11px;
+            }
+            
+            .sequencer {
+                padding: 6px;
+                gap: 2px;
+            }
+            
+            .beat-number {
+                font-size: 10px;
+                height: 18px;
+            }
+            
+            button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            
+            input[type="range"] {
+                width: 100px;
+            }
+            
+            .tempo-value {
+                min-width: 50px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Indie Melodic Step Sequencer</h1>
+    <div class="container">
+        <div class="controls">
+            <button id="play">Play</button>
+            <button id="stop">Stop</button>
+            <button id="clear">Clear</button>
+            <div style="display: flex; align-items: center; gap: 5px; margin-top: 5px;">
+                <label for="tempo">Tempo: </label>
+                <input type="range" id="tempo" min="60" max="180" value="120">
+                <span class="tempo-value">120 BPM</span>
+            </div>
+        </div>
+        <div class="sequencer" id="sequencer">
+            <!-- Will be populated with JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Sound setup using AudioContext
+        let audioContext;
+        let sounds = {};
+
+        // Initialize audio and create sounds
+        function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // Create different drum sounds
+            createDrumSound('kick', [60, 10], 0.7, 0.1);
+            createDrumSound('snare', [130, 20], 0.3, 0.15);
+            createDrumSound('hihat', [800, 100], 0.08, 0.05);
+            createDrumSound('clap', [350, 50], 0.2, 0.15);
+            createDrumSound('tom', [180, 30], 0.3, 0.2);
+            
+            // Create indie melodic sounds
+            createMelodicSound('synthBass', 'sine', [55, 110, 220], 0.4, 0.2);
+            createMelodicSound('pad', 'sine', [220, 277.18, 329.63], 0.3, 0.7);
+            createMelodicSound('pluck', 'triangle', [440, 554.37, 659.25], 0.04, 0.3);
+            createMelodicSound('bell', 'sine', [880, 1108.73, 1318.51], 0.1, 1.2);
+            createMelodicSound('arpeggio', 'sawtooth', [220, 277.18, 329.63, 440], 0.05, 0.4);
+        }
+
+        function createDrumSound(name, freqs, decay, noise) {
+            sounds[name] = {
+                play: function(time) {
+                    // Create oscillator for the main tone
+                    const osc = audioContext.createOscillator();
+                    osc.frequency.value = freqs[0];
+                    
+                    // Create noise for more realistic drum sounds
+                    const noiseNode = audioContext.createBufferSource();
+                    const bufferSize = audioContext.sampleRate * 2;
+                    const buffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+                    
+                    noiseNode.buffer = buffer;
+                    
+                    // Create gain nodes for envelope
+                    const gainOsc = audioContext.createGain();
+                    const gainNoise = audioContext.createGain();
+                    const mainGain = audioContext.createGain();
+                    
+                    // Connect everything
+                    osc.connect(gainOsc);
+                    noiseNode.connect(gainNoise);
+                    gainOsc.connect(mainGain);
+                    gainNoise.connect(mainGain);
+                    mainGain.connect(audioContext.destination);
+                    
+                    // Set initial gain
+                    gainOsc.gain.setValueAtTime(1, time);
+                    gainNoise.gain.setValueAtTime(noise, time);
+                    mainGain.gain.setValueAtTime(0.8, time);
+                    
+                    // Envelope
+                    osc.frequency.exponentialRampToValueAtTime(freqs[1], time + decay);
+                    gainOsc.gain.exponentialRampToValueAtTime(0.001, time + decay);
+                    gainNoise.gain.exponentialRampToValueAtTime(0.001, time + decay * 0.5);
+                    mainGain.gain.exponentialRampToValueAtTime(0.001, time + decay);
+                    
+                    // Start and stop
+                    osc.start(time);
+                    noiseNode.start(time);
+                    
+                    osc.stop(time + decay + 0.1);
+                    noiseNode.stop(time + decay + 0.1);
+                }
+            };
+        }
+        
+        // Create melodic sound with more musical properties
+        function createMelodicSound(name, waveType, notes, attack, release) {
+            sounds[name] = {
+                play: function(time, noteIndex = 0) {
+                    // Create oscillator for the main tone
+                    const osc = audioContext.createOscillator();
+                    osc.type = waveType;
+                    
+                    // Get the note frequency (default to first note if index out of bounds)
+                    const noteFreq = notes[noteIndex % notes.length];
+                    osc.frequency.value = noteFreq;
+                    
+                    // Create a filter for more character
+                    const filter = audioContext.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.value = 2000;
+                    filter.Q.value = 1;
+                    
+                    // Create gain node for envelope
+                    const gainNode = audioContext.createGain();
+                    
+                    // Add reverb (simplified)
+                    const convolver = audioContext.createConvolver();
+                    const reverbTime = 1.5;
+                    const decayRate = 0.2;
+                    
+                    // Create reverb impulse response
+                    const reverbBuffer = audioContext.createBuffer(
+                        2, 
+                        audioContext.sampleRate * reverbTime, 
+                        audioContext.sampleRate
+                    );
+                    
+                    for (let channel = 0; channel < 2; channel++) {
+                        const channelData = reverbBuffer.getChannelData(channel);
+                        for (let i = 0; i < channelData.length; i++) {
+                            channelData[i] = (Math.random() * 2 - 1) * 
+                                Math.pow(1 - i / channelData.length, decayRate);
+                        }
+                    }
+                    
+                    convolver.buffer = reverbBuffer;
+                    
+                    // Connect everything
+                    osc.connect(filter);
+                    filter.connect(gainNode);
+                    
+                    // Split output - direct and reverb
+                    const dryGain = audioContext.createGain();
+                    const wetGain = audioContext.createGain();
+                    
+                    gainNode.connect(dryGain);
+                    gainNode.connect(convolver);
+                    convolver.connect(wetGain);
+                    
+                    dryGain.connect(audioContext.destination);
+                    wetGain.connect(audioContext.destination);
+                    
+                    // Set gain levels
+                    dryGain.gain.value = 0.7;
+                    wetGain.gain.value = 0.3;
+                    
+                    // Set initial gain to 0
+                    gainNode.gain.setValueAtTime(0, time);
+                    
+                    // Attack phase - ramp up
+                    gainNode.gain.linearRampToValueAtTime(0.7, time + attack);
+                    
+                    // Release phase - ramp down
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, time + attack + release);
+                    
+                    // Filter envelope
+                    filter.frequency.setValueAtTime(100, time);
+                    filter.frequency.exponentialRampToValueAtTime(5000, time + attack * 0.5);
+                    filter.frequency.exponentialRampToValueAtTime(500, time + attack + release);
+                    
+                    // Start and stop
+                    osc.start(time);
+                    osc.stop(time + attack + release + 0.1);
+                }
+            };
+        }
+
+        // Sequencer setup
+        const drumInstruments = [
+            { id: 'kick', name: 'Kick Drum' },
+            { id: 'snare', name: 'Snare' },
+            { id: 'hihat', name: 'Hi-Hat' },
+            { id: 'clap', name: 'Clap' },
+            { id: 'tom', name: 'Tom' }
+        ];
+        
+        const melodicInstruments = [
+            { id: 'synthBass', name: 'Synth Bass' },
+            { id: 'pad', name: 'Synth Pad' },
+            { id: 'pluck', name: 'Pluck' },
+            { id: 'bell', name: 'Bell' },
+            { id: 'arpeggio', name: 'Arpeggio' }
+        ];
+        
+        const beats = 16;
+        let tempo = 120;
+        let isPlaying = false;
+        let currentBeat = 0;
+        let sequencerData = [];
+        let timerId = null;
+        let lastBeatTime = 0;
+        
+        // DOM elements
+        const playButton = document.getElementById('play');
+        const stopButton = document.getElementById('stop');
+        const clearButton = document.getElementById('clear');
+        const tempoSlider = document.getElementById('tempo');
+        const tempoValue = document.querySelector('.tempo-value');
+        const sequencerElement = document.getElementById('sequencer');
+        
+        // Initialize the sequencer grid
+        // Check if the device is mobile
+        function isMobileDevice() {
+            return (window.innerWidth <= 768) || 
+                   ('ontouchstart' in window) || 
+                   (navigator.maxTouchPoints > 0);
+        }
+        
+        function initSequencer() {
+            // Add beat numbers at the top
+            sequencerElement.appendChild(document.createElement('div')); // Empty cell for corner
+            
+            for (let beat = 0; beat < beats; beat++) {
+                const beatNumber = document.createElement('div');
+                beatNumber.className = 'beat-number';
+                if ((beat % 4) === 0) {
+                    beatNumber.classList.add('quarter');
+                    beatNumber.textContent = (beat + 1);
+                }
+                sequencerElement.appendChild(beatNumber);
+            }
+            
+            // Section divider: Drums
+            const drumSectionLabel = document.createElement('div');
+            drumSectionLabel.className = 'section-label';
+            drumSectionLabel.textContent = 'Drums';
+            sequencerElement.appendChild(drumSectionLabel);
+            
+            // Create rows for each drum instrument
+            drumInstruments.forEach(instrument => {
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = instrument.name;
+                sequencerElement.appendChild(label);
+                
+                // Initialize row data
+                const row = Array(beats).fill(false);
+                sequencerData.push(row);
+                
+                // Create beats
+                for (let beat = 0; beat < beats; beat++) {
+                    const beatElement = document.createElement('div');
+                    beatElement.className = 'beat';
+                    beatElement.dataset.row = sequencerData.length - 1;
+                    beatElement.dataset.beat = beat;
+                    
+                    // Add click event to toggle beat
+                    beatElement.addEventListener('click', toggleBeat);
+                    
+                    sequencerElement.appendChild(beatElement);
+                }
+            });
+            
+            // Section divider: Melodic
+            const melodicSectionLabel = document.createElement('div');
+            melodicSectionLabel.className = 'section-label';
+            melodicSectionLabel.textContent = 'Melodic';
+            sequencerElement.appendChild(melodicSectionLabel);
+            
+            // Create rows for each melodic instrument
+            melodicInstruments.forEach(instrument => {
+                // Create label
+                const label = document.createElement('div');
+                label.className = 'label';
+                label.textContent = instrument.name;
+                sequencerElement.appendChild(label);
+                
+                // Initialize row data with notes
+                // Each beat will be [isActive, noteIndex]
+                const row = Array(beats).fill(false);
+                sequencerData.push(row);
+                
+                // Create beats
+                for (let beat = 0; beat < beats; beat++) {
+                    const beatElement = document.createElement('div');
+                    beatElement.className = 'beat melodic';
+                    beatElement.dataset.row = sequencerData.length - 1;
+                    beatElement.dataset.beat = beat;
+                    beatElement.dataset.note = beat % 4; // Simple pattern: 0,1,2,3,0,1,2,3...
+                    
+                    // Add click event to toggle beat
+                    beatElement.addEventListener('click', toggleBeat);
+                    
+                    sequencerElement.appendChild(beatElement);
+                }
+            });
+        }
+        
+        // Toggle beat on/off
+        function toggleBeat(event) {
+            const row = parseInt(event.target.dataset.row);
+            const beat = parseInt(event.target.dataset.beat);
+            
+            sequencerData[row][beat] = !sequencerData[row][beat];
+            event.target.classList.toggle('active', sequencerData[row][beat]);
+        }
+        
+        // Play the sequencer
+        function play() {
+            if (!audioContext) {
+                initAudio();
+            }
+            
+            // Resume audio context if it was suspended
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+            
+            isPlaying = true;
+            playButton.disabled = true;
+            stopButton.disabled = false;
+            
+            // Set the first beat time
+            lastBeatTime = audioContext.currentTime;
+            
+            // Start the loop
+            nextBeat();
+        }
+        
+        // Handle each beat
+        function nextBeat() {
+            // Remove playing indicator from previous beat
+            const prevBeats = document.querySelectorAll(`.beat[data-beat="${currentBeat}"]`);
+            prevBeats.forEach(beat => beat.classList.remove('playing'));
+            
+            // Move to next beat
+            currentBeat = (currentBeat + 1) % beats;
+            
+            // Add playing indicator to current beat
+            const currentBeats = document.querySelectorAll(`.beat[data-beat="${currentBeat}"]`);
+            currentBeats.forEach(beat => beat.classList.add('playing'));
+            
+            // Play sounds for active drum cells
+            drumInstruments.forEach((instrument, index) => {
+                const row = index;
+                if (sequencerData[row][currentBeat]) {
+                    sounds[instrument.id].play(lastBeatTime);
+                }
+            });
+            
+            // Play sounds for active melodic cells
+            melodicInstruments.forEach((instrument, index) => {
+                const row = drumInstruments.length + index;
+                if (sequencerData[row][currentBeat]) {
+                    const beatElement = document.querySelector(`.beat.melodic[data-row="${row}"][data-beat="${currentBeat}"]`);
+                    const noteIndex = parseInt(beatElement.dataset.note);
+                    sounds[instrument.id].play(lastBeatTime, noteIndex);
+                }
+            });
+            
+            // Calculate time for next beat
+            const secondsPerBeat = 60 / tempo / 4; // 16th notes
+            lastBeatTime += secondsPerBeat;
+            
+            // Schedule next beat
+            const nextBeatDelay = (lastBeatTime - audioContext.currentTime) * 1000;
+            
+            if (isPlaying) {
+                timerId = setTimeout(nextBeat, nextBeatDelay);
+            }
+        }
+        
+        // Stop the sequencer
+        function stop() {
+            isPlaying = false;
+            clearTimeout(timerId);
+            playButton.disabled = false;
+            stopButton.disabled = true;
+            
+            // Remove playing indicator from all beats
+            const playingBeats = document.querySelectorAll('.beat.playing');
+            playingBeats.forEach(beat => beat.classList.remove('playing'));
+            
+            currentBeat = 0;
+        }
+        
+        // Clear all beats
+        function clearBeats() {
+            sequencerData = sequencerData.map(row => Array(beats).fill(false));
+            
+            // Update UI
+            const activeBeats = document.querySelectorAll('.beat.active');
+            activeBeats.forEach(beat => beat.classList.remove('active'));
+        }
+        
+        // Update tempo
+        function updateTempo() {
+            tempo = parseInt(tempoSlider.value);
+            tempoValue.textContent = `${tempo} BPM`;
+        }
+        
+        // Adjust for touch events
+        function addTouchEvents() {
+            // Prevent default touch actions to avoid scrolling while using the sequencer
+            document.querySelectorAll('.beat').forEach(beat => {
+                beat.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    toggleBeat(e);
+                }, { passive: false });
+            });
+            
+            // Make controls more touch-friendly
+            document.querySelectorAll('button').forEach(button => {
+                button.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    this.click();
+                }, { passive: false });
+            });
+            
+            // Improve slider behavior on touch devices
+            tempoSlider.addEventListener('touchstart', function(e) {
+                e.stopPropagation();
+            }, { passive: true });
+            
+            // Add double-tap prevention
+            let lastTouchEnd = 0;
+            document.addEventListener('touchend', function(e) {
+                const now = Date.now();
+                if (now - lastTouchEnd <= 300) {
+                    e.preventDefault();
+                }
+                lastTouchEnd = now;
+            }, { passive: false });
+        }
+        
+        // Handle orientation changes
+        function handleOrientationChange() {
+            const warning = document.getElementById('orientation-warning');
+            
+            if (window.innerHeight > window.innerWidth && isMobileDevice()) {
+                // Portrait mode on mobile - show warning if not already present
+                if (!warning) {
+                    const warningEl = document.createElement('div');
+                    warningEl.id = 'orientation-warning';
+                    warningEl.style.position = 'fixed';
+                    warningEl.style.top = '0';
+                    warningEl.style.left = '0';
+                    warningEl.style.right = '0';
+                    warningEl.style.backgroundColor = 'rgba(244, 67, 54, 0.9)';
+                    warningEl.style.color = 'white';
+                    warningEl.style.padding = '10px';
+                    warningEl.style.textAlign = 'center';
+                    warningEl.style.zIndex = '1000';
+                    warningEl.textContent = 'For best experience, rotate your device to landscape mode';
+                    document.body.appendChild(warningEl);
+                }
+            } else if (warning) {
+                // Landscape mode or desktop - remove warning if present
+                warning.remove();
+            }
+        }
+        
+        // Initialize and set up event listeners
+        function init() {
+            initSequencer();
+            
+            playButton.addEventListener('click', play);
+            stopButton.addEventListener('click', stop);
+            clearButton.addEventListener('click', clearBeats);
+            tempoSlider.addEventListener('input', updateTempo);
+            
+            // Initialize button states
+            stopButton.disabled = true;
+            
+            // Handle mobile-specific adjustments
+            if (isMobileDevice()) {
+                addTouchEvents();
+            }
+            
+            // Handle orientation changes
+            handleOrientationChange();
+            window.addEventListener('resize', handleOrientationChange);
+            window.addEventListener('orientationchange', handleOrientationChange);
+        }
+        
+        // Start everything
+        init();
+    </script>
+</body>
+</html>
