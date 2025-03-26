@@ -1,0 +1,372 @@
+<div class="my-bmi-calculator dark-mode" style="font-family: 'Roboto', sans-serif; max-width: 480px; margin: 30px auto; padding: 25px; border: 1px solid #333; border-radius: 12px; background-color: #1a1a1a; color: #f0f0f0; box-shadow: 0 6px 20px rgba(0,0,0,0.2); transition: all 0.3s ease;">
+    <style>
+        .my-bmi-calculator.dark-mode {
+            background-color: #1a1a1a !important;
+            color: #f0f0f0 !important;
+            border-color: #333 !important;
+        }
+        .my-bmi-calculator.dark-mode .my-input-section label,
+        .my-bmi-calculator.dark-mode .my-results-section p,
+        .my-bmi-calculator.dark-mode .my-results-section .my-range-item {
+            color:#f0f0f0 !important;
+        }
+
+        .my-bmi-calculator.dark-mode .my-input-section input,
+        .my-bmi-calculator.dark-mode .my-input-section button {
+            background-color: #222 !important;
+            color: #f0f0f0 !important;
+            border-color: #444 !important;
+        }
+
+        .my-bmi-calculator.dark-mode .my-input-section input:focus,
+        .my-bmi-calculator.dark-mode .my-input-section button:focus {
+            outline: none !important;
+            box-shadow: 0 0 5px #777 !important;
+            border-color: #777 !important;
+        }
+
+       .my-input-section {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+         .my-input-section .my-input-group {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+         .my-input-section .my-input-unit-group{
+           display: flex;
+            flex-direction: column;
+            flex: 1;
+            margin-right: 5px;
+            position: relative;
+         }
+
+          .my-input-section .my-input-unit-group:last-child{
+             margin-right: 0px;
+          }
+
+        .my-input-section label {
+           margin-bottom: 5px;
+            display: block;
+             font-weight: 500;
+            font-size: 1rem;
+            transition: color 0.3s ease;
+        }
+
+        .my-input-section input {
+            padding: 14px 35px 14px 12px; /* Adjust padding for unit placeholder */
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            margin-bottom: 5px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            background-color: #f0f0f0;
+            color: #333;
+            width: 100%;
+           flex: 1;
+           appearance: none;
+           -moz-appearance: textfield;
+           text-align:left;
+            font-size: 1.2rem;
+            position:relative; /* Position relative for unit display */
+
+        }
+
+        .my-input-section input::placeholder {
+            color: #999;
+        }
+
+        .my-input-section input::-webkit-outer-spin-button,
+        .my-input-section input::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+         .my-input-section input:focus {
+            outline: none !important;
+            border-color: #777 !important;
+            box-shadow: 0 0 5px #777 !important;
+        }
+
+        .my-input-section .unit-display {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.9rem;
+            pointer-events: none; /* Ensure that it doesn't interfere with input */
+            color: #999;
+            z-index: 1;
+          }
+         .my-input-section button {
+            padding: 12px 18px;
+            border: none;
+            background-color: #3498db;
+            color: white;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background-color 0.3s ease;
+            font-weight: bold;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .my-input-section button:hover {
+            background-color: #2980b9;
+        }
+        .my-input-section button:focus {
+            outline: none !important;
+            box-shadow: 0 0 5px #777 !important;
+        }
+         .my-results-section {
+            margin-top: 10px;
+        }
+         .my-results-section p {
+            margin-bottom: 10px;
+            font-size: 1rem;
+            line-height: 1.6;
+            transition: color 0.3s ease;
+        }
+       .my-results-section .my-range-item {
+           padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+             transition: background-color 0.3s ease;
+            background-color:#f0f0f0;
+            color:#333;
+        }
+         .my-results-section .my-range-item:last-child {
+           margin-bottom: 0px;
+        }
+          .my-bmi-calculator.dark-mode .my-results-section .my-range-item {
+            background-color: #222 !important;
+        }
+
+        @media (max-width: 480px) {
+            .my-input-section input{
+                 margin-right: 0px;
+                 margin-bottom: 5px;
+            }
+            .my-input-section .my-input-unit-group{
+                 margin-right: 0px;
+            }
+        }
+     .my-results-section .my-range-item#underweight-range,
+     .my-bmi-calculator:not(.dark-mode) .my-results-section .my-range-item#underweight-range {
+            color: #3498db;
+             background-color: rgba(52, 152, 219, 0.1);
+         }
+     .my-results-section .my-range-item#normal-range,
+     .my-bmi-calculator:not(.dark-mode) .my-results-section .my-range-item#normal-range {
+            color: green;
+             background-color: rgba(0, 128, 0, 0.1);
+        }
+     .my-results-section .my-range-item#overweight-range,
+     .my-bmi-calculator:not(.dark-mode) .my-results-section .my-range-item#overweight-range {
+            color: orange;
+             background-color: rgba(255, 255, 0, 0.1);
+        }
+    .my-results-section .my-range-item#obese-range,
+    .my-bmi-calculator:not(.dark-mode) .my-results-section .my-range-item#obese-range {
+            color: red;
+            background-color: rgba(255, 0, 0, 0.1);
+        }
+    </style>
+    <div class="my-input-section">
+      <label for="height-feet">Enter Height</label>
+       <div class="my-input-group">
+          <div class="my-input-unit-group">
+           <input type="number" id="height-feet" placeholder="Feet" min="0" value="">
+           <span class="unit-display" id="height-feet-unit"></span>
+        </div>
+       <div class="my-input-unit-group">
+           <input type="number" id="height-inches" placeholder="Inches" min="0" value="">
+            <span class="unit-display" id="height-inches-unit"></span>
+        </div>
+        </div>
+      <button id="toggle-unit">Switch to Metric</button>
+    </div>
+    <div class="my-results-section">
+        <div class="my-range-item" id="underweight-range">
+            <span>Underweight: </span><span id="underweight"></span>
+        </div>
+        <div class="my-range-item" id="normal-range">
+            <span>Normal: </span><span id="normal"></span>
+        </div>
+        <div class="my-range-item" id="overweight-range">
+            <span>Overweight: </span><span id="overweight"></span>
+        </div>
+        <div class="my-range-item" id="obese-range">
+            <span>Obese: </span><span id="obese"></span>
+        </div>
+    </div>
+     <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const heightFeetInput = document.getElementById('height-feet');
+      const heightInchesInput = document.getElementById('height-inches');
+      const heightFeetUnit = document.getElementById('height-feet-unit');
+      const heightInchesUnit = document.getElementById('height-inches-unit');
+      const underweightDisplay = document.getElementById('underweight');
+      const normalDisplay = document.getElementById('normal');
+      const overweightDisplay = document.getElementById('overweight');
+      const obeseDisplay = document.getElementById('obese');
+      const toggleUnitButton = document.getElementById('toggle-unit');
+
+      let isMetric = false;
+      let lastKnownHeightInches = 0;
+
+
+       function calculateAndDisplayRanges() {
+           let heightFeet = heightFeetInput.value;
+          let heightInches = heightInchesInput.value;
+
+           if (!heightFeet || !heightInches){
+                 underweightDisplay.textContent = "Input height for values";
+                normalDisplay.textContent = "";
+                overweightDisplay.textContent = "";
+                obeseDisplay.textContent = "";
+                 return;
+            }
+
+            heightFeet = parseFloat(heightFeet);
+            heightInches = parseFloat(heightInches);
+
+             if (isNaN(heightFeet) || isNaN(heightInches) || heightFeet < 0 || heightInches < 0) {
+                underweightDisplay.textContent = "Invalid Height";
+                normalDisplay.textContent = "";
+                overweightDisplay.textContent = "";
+                obeseDisplay.textContent = "";
+                return;
+            }
+
+          let heightInInches;
+           if(isMetric) {
+                heightInInches = (heightFeet * 100 + heightInches) / 2.54;
+           } else {
+                heightInInches = heightFeet * 12 + heightInches;
+            }
+
+           if (isNaN(heightInInches) || heightInInches <= 0) {
+                 underweightDisplay.textContent = "Invalid Height";
+                normalDisplay.textContent = "";
+                overweightDisplay.textContent = "";
+                obeseDisplay.textContent = "";
+                return;
+           }
+
+           lastKnownHeightInches = heightInInches;
+           let heightInMeters = heightInInches / 39.3701;
+
+
+            const calculateBmiRanges = (heightInMeters, heightInInches) => {
+                 let underweightMax, normalMin, normalMax, overweightMin, overweightMax, obeseMin;
+                if (isMetric) {
+                  const heightInMetersToPower = Math.pow(heightInMeters, 2.5);
+                  underweightMax =  18.5 * heightInMetersToPower / 1.3;
+                   normalMin = 18.5 * heightInMetersToPower / 1.3;
+                   normalMax = 25 * heightInMetersToPower / 1.3;
+                    overweightMin = 25 * heightInMetersToPower / 1.3;
+                    overweightMax = 30 * heightInMetersToPower / 1.3;
+                    obeseMin = 30 * heightInMetersToPower / 1.3;
+
+                } else {
+                    const heightInInchesToPower = Math.pow(heightInInches, 2.5);
+                    underweightMax = (18.5 / 5734) * heightInInchesToPower;
+                     normalMin = (18.5 / 5734) * heightInInchesToPower;
+                    normalMax = (25 / 5734) * heightInInchesToPower;
+                    overweightMin = (25 / 5734) * heightInInchesToPower;
+                    overweightMax = (30 / 5734) * heightInInchesToPower;
+                    obeseMin = (30 / 5734) * heightInInchesToPower;
+                }
+                return { underweightMax, normalMin, normalMax, overweightMin, overweightMax, obeseMin };
+            }
+
+            const { underweightMax, normalMin, normalMax, overweightMin, overweightMax, obeseMin } = calculateBmiRanges(heightInMeters, heightInInches);
+
+           underweightDisplay.textContent = `${formatWeight(0)} - ${formatWeight(underweightMax)}`;
+            normalDisplay.textContent = `${formatWeight(normalMin)} - ${formatWeight(normalMax)}`;
+            overweightDisplay.textContent = `${formatWeight(overweightMin)} - ${formatWeight(overweightMax)}`;
+            obeseDisplay.textContent = `> ${formatWeight(obeseMin)}`;
+        }
+
+
+        function formatWeight(weight) {
+           if (isNaN(weight)) {
+               return 'NaN';
+           }
+           if (isMetric){
+                return `${weight.toFixed(1)} kg`;
+            }
+            else {
+                 return `${(weight).toFixed(1)} lbs`
+            }
+        }
+
+       function updateInputFields() {
+            if (isMetric) {
+                heightFeetInput.placeholder = 'Meters';
+                heightInchesInput.placeholder = 'Centimeters';
+                heightFeetUnit.textContent = 'm';
+                heightInchesUnit.textContent = 'cm';
+                heightFeetInput.min = 0;
+                heightFeetInput.max = 2.7;
+                heightInchesInput.min = 0;
+                heightInchesInput.max = 99;
+
+            } else {
+                heightFeetInput.placeholder = 'Feet';
+                heightInchesInput.placeholder = 'Inches';
+                heightFeetUnit.textContent = 'ft';
+                heightInchesUnit.textContent = 'in';
+                heightFeetInput.min = 0;
+                heightFeetInput.max = 9;
+                heightInchesInput.min = 0;
+                heightInchesInput.max = 11;
+          }
+           if (lastKnownHeightInches > 0) {
+               if (isMetric) {
+                    let heightInMeters = lastKnownHeightInches / 39.3701;
+                    let meters = Math.floor(heightInMeters);
+                    let remainingCentimeters =  Math.round((heightInMeters - meters) * 100);
+                   heightFeetInput.value = meters;
+                   heightInchesInput.value = remainingCentimeters;
+               }
+              else {
+                  let feet = Math.floor(lastKnownHeightInches / 12);
+                  let remainingInches =  Math.round(lastKnownHeightInches - (feet * 12));
+                   heightFeetInput.value = feet;
+                   heightInchesInput.value = remainingInches;
+              }
+          }
+      }
+
+
+        heightFeetInput.addEventListener('input', function(){
+             calculateAndDisplayRanges();
+        });
+
+
+        heightInchesInput.addEventListener('input', function(){
+             calculateAndDisplayRanges();
+         });
+
+
+        toggleUnitButton.addEventListener('click', function () {
+            isMetric = !isMetric;
+            toggleUnitButton.textContent = isMetric ? 'Switch to Imperial' : 'Switch to Metric';
+           updateInputFields();
+            calculateAndDisplayRanges();
+       });
+      // Initial setup
+        updateInputFields();
+        calculateAndDisplayRanges();
+    });
+    </script>
+</div>

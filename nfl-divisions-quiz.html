@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFL Memorization Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+        #game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1e1e1e;
+            border-radius: 8px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        }
+        #team-name {
+            font-size: 36px;
+            margin-bottom: 20px;
+            word-wrap: break-word;
+        }
+        #instructions {
+            margin-top: 20px;
+            font-size: 20px;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            word-wrap: break-word;
+            box-sizing: border-box;
+        }
+        .correct {
+            color: #28a745;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            animation: fadeIn 0.5s;
+            box-sizing: border-box;
+        }
+        .incorrect {
+            color: #dc3545;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 5px;
+            animation: fadeIn 0.5s;
+            box-sizing: border-box;
+        }
+        #start-button, #share-button, #restart-button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 10px;
+            display: block;
+            width: 100%;
+            max-width: 200px;
+            margin: 10px auto;
+        }
+        #start-button:hover, #share-button:hover, #restart-button:hover {
+            background-color: #0056b3;
+        }
+        #toast {
+            visibility: hidden;
+            min-width: 250px;
+            margin-left: -125px;
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 16px;
+            position: fixed;
+            z-index: 1;
+            left: 50%;
+            bottom: 30px;
+            font-size: 17px;
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadeInOut 3s;
+        }
+        @keyframes fadeInOut {
+            0%, 100% { bottom: 0; opacity: 0; }
+            20%, 80% { bottom: 30px; opacity: 1; }
+        }
+        .arrow-buttons {
+            padding: 10px;
+            display: flex;
+            justify-content: space-around;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+            margin: 10px auto;
+            flex-direction: column;
+        }
+        .arrow-buttons button {
+            width: 80px;
+            height: 60px;
+            font-size: 18px;
+            border-radius: 5px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 10px;
+        }
+        .arrow-buttons button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1 id="team-name">Press Start to Begin</h1>
+        <button id="start-button" onclick="startGame()">Start Game</button>
+        <div id="instructions"></div>
+    </div>
+    <div id="toast">Copied to clipboard</div>
+
+    <script>
+        const teams = [
+            { name: "Denver Broncos", emoji: "🐴", conference: "AFC", division: "West" },
+            { name: "Kansas City Chiefs", emoji: "🏈", conference: "AFC", division: "West" },
+            { name: "Las Vegas Raiders", emoji: "☠️", conference: "AFC", division: "West" },
+            { name: "Los Angeles Chargers", emoji: "⚡", conference: "AFC", division: "West" },
+            { name: "Baltimore Ravens", emoji: "🦅", conference: "AFC", division: "North" },
+            { name: "Cincinnati Bengals", emoji: "🐯", conference: "AFC", division: "North" },
+            { name: "Cleveland Browns", emoji: "🐶", conference: "AFC", division: "North" },
+            { name: "Pittsburgh Steelers", emoji: "⚙️", conference: "AFC", division: "North" },
+            { name: "Buffalo Bills", emoji: "🐃", conference: "AFC", division: "East" },
+            { name: "Miami Dolphins", emoji: "🐬", conference: "AFC", division: "East" },
+            { name: "New England Patriots", emoji: "🇺🇸", conference: "AFC", division: "East" },
+            { name: "New York Jets", emoji: "✈️", conference: "AFC", division: "East" },
+            { name: "Houston Texans", emoji: "🐂", conference: "AFC", division: "South" },
+            { name: "Indianapolis Colts", emoji: "🐎", conference: "AFC", division: "South" },
+            { name: "Jacksonville Jaguars", emoji: "🐆", conference: "AFC", division: "South" },
+            { name: "Tennessee Titans", emoji: "⚔️", conference: "AFC", division: "South" },
+            { name: "Chicago Bears", emoji: "🐻", conference: "NFC", division: "North" },
+            { name: "Detroit Lions", emoji: "🦁", conference: "NFC", division: "North" },
+            { name: "Green Bay Packers", emoji: "🧀", conference: "NFC", division: "North" },
+            { name: "Minnesota Vikings", emoji: "🛡️", conference: "NFC", division: "North" },
+            { name: "Atlanta Falcons", emoji: "🦅", conference: "NFC", division: "South" },
+            { name: "Carolina Panthers", emoji: "🐆", conference: "NFC", division: "South" },
+            { name: "New Orleans Saints", emoji: "⚜️", conference: "NFC", division: "South" },
+            { name: "Tampa Bay Buccaneers", emoji: "🏴‍☠️", conference: "NFC", division: "South" },
+            { name: "Dallas Cowboys", emoji: "🤠", conference: "NFC", division: "East" },
+            { name: "New York Giants", emoji: "🏙️", conference: "NFC", division: "East" },
+            { name: "Philadelphia Eagles", emoji: "🦅", conference: "NFC", division: "East" },
+            { name: "Washington Commanders", emoji: "🎖️", conference: "NFC", division: "East" },
+            { name: "Arizona Cardinals", emoji: "🪶", conference: "NFC", division: "West" },
+            { name: "Los Angeles Rams", emoji: "🐏", conference: "NFC", division: "West" },
+            { name: "San Francisco 49ers", emoji: "⛏️", conference: "NFC", division: "West" },
+            { name: "Seattle Seahawks", emoji: "🦅", conference: "NFC", division: "West" }
+        ];
+
+        let startTime;
+        let remainingTeams;
+        let currentTeam;
+        let inputEnabled = true;
+        let currentSelectionMode;
+
+        function startGame() {
+            startTime = new Date();
+            remainingTeams = [...teams];
+            document.getElementById('start-button').style.display = 'none';
+            nextTeam();
+        }
+
+        function nextTeam() {
+            if (remainingTeams.length === 0) {
+                const endTime = new Date();
+                const completionTime = (endTime - startTime) / 1000;
+                displayCompletionMessage(completionTime);
+                document.onkeydown = null;
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * remainingTeams.length);
+            currentTeam = remainingTeams[randomIndex];
+            remainingTeams.splice(randomIndex, 1);
+            displayTeam(currentTeam);
+            currentSelectionMode = 'conference';
+        }
+
+        function displayTeam(team) {
+            document.getElementById('team-name').innerText = `${team.name} ${team.emoji}`;
+            setConferenceInstructions();
+
+            if (isMobile()) {
+                showMobileButtons(['AFC', 'NFC'], team, 'conference');
+            } else {
+                document.onkeydown = handleKeyPress;
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (!inputEnabled) return;
+
+            if (currentSelectionMode === 'conference' && ['ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                inputEnabled = false;
+                if ((event.key === 'ArrowLeft' && currentTeam.conference === 'AFC') || (event.key === 'ArrowRight' && currentTeam.conference === 'NFC')) {
+                    handleDivisionSelection(currentTeam);
+                } else {
+                    showErrorMessage(`Incorrect conference! It is ${currentTeam.conference}. Try again.`, currentTeam);
+                }
+            } else if (currentSelectionMode === 'division' && ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                inputEnabled = false;
+                if (
+                    (event.key === 'ArrowUp' && currentTeam.division === 'North') ||
+                    (event.key === 'ArrowDown' && currentTeam.division === 'South') ||
+                    (event.key === 'ArrowLeft' && currentTeam.division === 'West') ||
+                    (event.key === 'ArrowRight' && currentTeam.division === 'East')
+                ) {
+                    document.getElementById('instructions').innerHTML = `<div class='correct'>Correct! Moving to next team.</div>`;
+                    setTimeout(() => {
+                        inputEnabled = true;
+                        nextTeam();
+                    }, 1000);
+                } else {
+                    showErrorMessage(`Incorrect division! It is ${currentTeam.division}. Try again.`, currentTeam);
+                }
+            }
+        }
+
+        function handleDivisionSelection(team) {
+            currentSelectionMode = 'division';
+            setDivisionInstructions();
+            if (isMobile()) {
+                showMobileButtons(['North', 'South', 'East', 'West'], team, 'division');
+            }
+        }
+
+        function showMobileButtons(options, team, category) {
+            const container = document.createElement('div');
+            container.className = 'arrow-buttons';
+
+            options.forEach(option => {
+                const button = document.createElement('button');
+                button.innerHTML = option;
+                button.onclick = function() {
+                    if (team[category] === option) {
+                        document.getElementById('instructions').innerHTML = `<div class='correct'>Correct! Moving on.</div>`;
+                        if (category === 'conference') {
+                            setTimeout(() => handleDivisionSelection(team), 1000);
+                        } else {
+                            setTimeout(nextTeam, 1000);
+                        }
+                    } else {
+                        showErrorMessage(`Incorrect ${category}! It is ${team[category]}. Try again.`, team, category);
+                    }
+                };
+                container.appendChild(button);
+            });
+
+            document.getElementById('instructions').innerHTML = `Choose the ${category}:`;
+            document.getElementById('instructions').appendChild(container);
+        }
+
+        function showErrorMessage(message, team, category) {
+            document.getElementById('instructions').innerHTML = `<div class='incorrect'>${message}</div>`;
+            setTimeout(() => {
+                if (category === 'division' || currentSelectionMode === 'division') {
+                    setDivisionInstructions();
+                    inputEnabled = true;
+                } else {
+                    setConferenceInstructions();
+                    inputEnabled = true;
+                }
+            }, 1000);
+        }
+
+        function setConferenceInstructions() {
+            document.getElementById('instructions').innerHTML = '<div> &larr; (AFC)  or  (NFC) &rarr;</div>';
+            inputEnabled = true;
+            currentSelectionMode = 'conference';
+        }
+
+        function setDivisionInstructions() {
+            document.getElementById('instructions').innerHTML = '<div> &uarr;<br/> (North) <br/> &larr; (West) &nbsp;&nbsp;&nbsp;&nbsp; (East) &rarr; <br/>(South) <br/>&darr; </div>';
+            inputEnabled = true;
+            currentSelectionMode = 'division';
+        }
+
+        function displayCompletionMessage(completionTime) {
+            const message = `Congratulations! You've correctly sorted all teams in ${completionTime} seconds.`;
+            document.getElementById('instructions').innerHTML = `<span class='correct'>${message}</span>`;
+            document.getElementById('instructions').innerHTML += `<button id='share-button' onclick='copyResult(${completionTime})'>Share</button>`;
+            document.getElementById('instructions').innerHTML += `<button id='restart-button' onclick='restartGame()'>Restart</button>`;
+        }
+
+        function restartGame() {
+            document.getElementById('team-name').innerText = "Press Start to Begin";
+            document.getElementById('start-button').style.display = 'block';
+            document.getElementById('instructions').innerHTML = '';
+            document.onkeydown = null;
+        }
+
+        function copyResult(completionTime) {
+            const copyText = `I successfully sorted all the NFL teams in ${completionTime} seconds on mattsayar.com`;
+            navigator.clipboard.writeText(copyText).then(() => {
+                showToast();
+            }, (err) => {
+                console.error('Could not copy text: ', err);
+            });
+        }
+
+        function showToast() {
+            const toast = document.getElementById("toast");
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        }
+
+        function isMobile() {
+            return /Mobi|Android/i.test(navigator.userAgent);
+        }
+    </script>
+</body>
+</html>

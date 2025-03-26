@@ -1,0 +1,352 @@
+<div id="number-game-container"></div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const gameContainerDiv = document.getElementById('number-game-container');
+
+    // Create shadow root
+    const shadowRoot = gameContainerDiv.attachShadow({ mode: 'open' });
+
+    // Construct the game HTML inside the shadow DOM
+    shadowRoot.innerHTML = `
+    <style>
+        :host {
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 60vh; /* adjusted to 60vh */
+            width: 100%;
+            margin: 0;
+            background-color: #1a1a1a;
+            color: #ffffff;
+            position: relative;
+            box-sizing: border-box;
+        }
+        .light-mode {
+            background-color: #f0f0f0;
+            color: #000000;
+        }
+        .container {
+            text-align: center;
+            margin: 5px; /* reduced margin */
+            padding: 0; /* no padding */
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 1.2em;
+            cursor: pointer;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        button.selected {
+            background-color: #2ecc71;
+        }
+        button.incorrect {
+            background-color: #e74c3c;
+        }
+        #number-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 10px; /* adjusted to be smaller */
+        }
+        .number-button {
+            padding: 15px 30px;
+            font-size: 1.5em;
+            background-color: #3498db;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0 5px; /* reduced margin */
+            transition: background-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .number-button:hover {
+            background-color: #2980b9;
+        }
+        #message {
+            font-size: 1.3em;
+            margin-bottom: 5px; /* reduced margin */
+        }
+        .dot-container {
+            display: inline-block;
+            margin: 0 2px; /* reduced margin */
+        }
+        .dots-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 10px);
+            grid-template-rows: repeat(2, 10px);
+            gap: 1px; /* reduced gap */
+            border: 1px solid #ffffff;
+            padding: 1px; /* reduced padding */
+        }
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: #ffffff;
+            border-radius: 50%;
+        }
+        #congrats {
+            display: none;
+            font-size: 2em;
+            margin-bottom: 10px; /* reduced margin */
+        }
+        .sound-toggle {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 2em; /* increased font size */
+            cursor: pointer;
+        }
+        .sound-toggle.sound-on::before {
+            content: "🔊";
+        }
+        .sound-toggle.sound-off::before {
+            content: "🔈";
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+
+    <div class="sound-toggle sound-off"></div>
+    <div class="container">
+        <h1>Understanding Numbers</h1>
+        <button id="start-button">Start Game</button>
+        <div id="congrats" class="hidden"></div>
+        <div id="message"></div>
+        <div id="number-buttons" class="hidden"></div>
+        <button id="restart-button" class="hidden">Play Again</button>
+    </div>
+    `;
+
+    const startButton = shadowRoot.getElementById('start-button');
+    const congratsMessage = shadowRoot.getElementById('congrats');
+    const messageDiv = shadowRoot.getElementById('message');
+    const numberButtonsDiv = shadowRoot.getElementById('number-buttons');
+    const restartButton = shadowRoot.getElementById('restart-button');
+    const soundToggle = shadowRoot.querySelector('.sound-toggle');
+
+    let numbers = [];
+    let currentTask = '';
+    let correctRounds = 0;
+    let gameCompleted = 0; 
+    let soundEnabled = false;
+    let gameStarted = false;
+    let buttons = [];
+    let stageCompleted = false;
+
+    function toggleDarkMode() {
+        shadowRoot.host.classList.toggle('light-mode');
+    }
+
+    soundToggle.addEventListener('click', function() {
+        soundEnabled = !soundEnabled;
+        soundToggle.classList.toggle('sound-on', soundEnabled);
+        soundToggle.classList.toggle('sound-off', !soundEnabled);
+    });
+
+    function generateRandomNumbers() {
+        numbers = [];
+        while (numbers.length < 4) {
+            const num = Math.floor(Math.random() * 21);
+            if (!numbers.includes(num)) {
+                numbers.push(num);
+            }
+        }
+        return numbers;
+    }
+
+    function createNumberButton(num) {
+        const button = document.createElement('button');
+        button.textContent = num;
+        button.classList.add('number-button');
+        button.dataset.number = num;
+        const dotContainer = document.createElement('div');
+        dotContainer.classList.add('dot-container');
+        button.appendChild(dotContainer);
+        return button;
+    }
+
+    function displayDots(element, number) {
+        const dotContainer = element.querySelector(".dot-container");
+        dotContainer.innerHTML = "";
+        if (number === 0) {
+            const emptyGrid = document.createElement('div');
+            emptyGrid.classList.add('dots-grid');
+            dotContainer.appendChild(emptyGrid);
+        } else {
+            const grids = Math.ceil(number / 10);
+            for (let g = 0; g < grids; g++) {
+                const dotsGrid = document.createElement('div');
+                dotsGrid.classList.add('dots-grid');
+                const dotsInThisGrid = Math.min(number - g * 10, 10);
+                for (let i = 0; i < dotsInThisGrid; i++) {
+                    const dot = document.createElement('div');
+                    dot.classList.add('dot');
+                    dotsGrid.appendChild(dot);
+                }
+                dotContainer.appendChild(dotsGrid);
+            }
+        }
+    }
+
+    function clearDots(element) {
+        const dotContainer = element.querySelector(".dot-container");
+        dotContainer.innerHTML = "";
+    }
+
+    function displayNumbers() {
+        numberButtonsDiv.innerHTML = '';
+        buttons = [];
+        numbers.forEach(number => {
+            const button = createNumberButton(number);
+            button.addEventListener('click', handleNumberClick);
+            numberButtonsDiv.appendChild(button);
+            buttons.push(button);
+        });
+    }
+
+    function startRound() {
+        generateRandomNumbers();
+        displayNumbers();
+        currentTask = 'smallest';
+        stageCompleted = false;
+        clearButtonStyles();
+        showMessage('Click the smallest number');
+        numberButtonsDiv.classList.remove('hidden');
+    }
+
+    function clearButtonStyles() {
+        buttons.forEach(button => {
+            button.classList.remove("selected");
+            button.classList.remove("incorrect");
+            button.style.backgroundColor = '';
+            clearDots(button);
+        });
+    }
+
+    function showMessage(message) {
+        messageDiv.textContent = message;
+        if (soundEnabled && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(message);
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utterance);
+        }
+    }
+
+    function sayNumber(number) {
+        if (soundEnabled && 'speechSynthesis' in window) {
+            const utterance = new SpeechSynthesisUtterance(number.toString());
+            speechSynthesis.speak(utterance);
+        }
+    }
+
+    function handleNumberClick(event) {
+        const selectedButton = event.target.closest('button');
+        if (!selectedButton) return;
+
+        const selectedNumber = parseInt(selectedButton.dataset.number);
+        const min = Math.min(...numbers);
+        const max = Math.max(...numbers);
+
+        if (currentTask === 'smallest' && !stageCompleted) {
+            if (selectedNumber === min) {
+                selectedButton.classList.add("selected");
+                sayNumber(min);
+                stageCompleted = true;
+                removeNumber(min);
+
+                buttons.forEach(button => {
+                    button.classList.remove("incorrect");
+                });
+
+                setTimeout(() => {
+                    currentTask = 'biggest';
+                    showMessage('Good! Click the biggest number');
+                }, 500);
+            } else {
+                incorrect(selectedButton, 'smallest');
+            }
+        } else if (currentTask === 'biggest' && stageCompleted) {
+            if (selectedNumber === max) {
+                selectedButton.classList.add("selected");
+                sayNumber(max);
+                removeNumber(max);
+                correctRounds++;
+                numberButtonsDiv.classList.add("hidden");
+                showMessage('Good!');
+                if (correctRounds >= 3) {
+                    showCongratulations();
+                } else {
+                    setTimeout(startRound, 1000);
+                }
+            } else {
+                incorrect(selectedButton, 'biggest');
+            }
+        }
+    }
+
+    function removeNumber(number) {
+        numbers = numbers.filter(num => num !== number);
+    }
+
+    function incorrect(element, task) {
+        element.classList.add("incorrect");
+        showMessage('Incorrect!');
+        buttons.forEach(button => {
+            displayDots(button, parseInt(button.dataset.number));
+        });
+        setTimeout(() => showMessage(`Click the ${task} number`), 1000);
+    }
+
+    function startGame() {
+        gameStarted = true;
+        startButton.classList.add('hidden');
+        congratsMessage.classList.add("hidden");
+        restartButton.classList.add("hidden");
+        correctRounds = 0;
+        startRound();
+    }
+
+    function showCongratulations() {
+        numberButtonsDiv.innerHTML = '';
+        numberButtonsDiv.classList.add("hidden");
+        congratsMessage.textContent = '';
+        messageDiv.textContent = '';
+        gameCompleted++;
+        setTimeout(() => {
+            showMessage('Congratulations!');
+        }, 500);
+        setTimeout(() => {
+            showMessage(`You've completed ${gameCompleted} game${gameCompleted > 1 ? 's' : ''} successfully`);
+            congratsMessage.textContent = `You've completed ${gameCompleted} game${gameCompleted > 1 ? 's' : ''} successfully`;
+            restartButton.classList.remove("hidden");
+        }, 2000);
+    }
+
+    startButton.addEventListener('click', function() {
+        if(!gameStarted) {
+            startGame();
+        } else {
+            startGame();
+        }
+    });
+
+    restartButton.addEventListener('click', function() {
+        startGame();
+    });
+
+  });
+</script>
