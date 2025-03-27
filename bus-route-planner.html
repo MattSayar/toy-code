@@ -1,0 +1,224 @@
+<div id="bus-route-planner-container"></div>
+<p>
+<script>
+(() => {
+  const template = document.createElement('template');
+  template.innerHTML = `
+    <style>
+      :host {
+        display: block;
+        padding: 10px;
+        max-width: 800px;
+        margin: 0 auto;
+        background-color: #121212;
+        color: #e0e0e0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+      }
+      .container { background-color: #1e1e1e; border-radius: 8px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); }
+      h1 { text-align: center; color: #fff; margin-bottom: 20px; margin: 0}
+      .upload-area { border: 2px dashed #404040; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 20px; background-color: #262626; }
+      .upload-area:hover { border-color: #666; }
+      .upload-area.dragover { border-color: #2196f3; background-color: #333; }
+      .upload-icon { font-size: 48px; color: #888; margin-bottom: 10px; }
+      .file-input-label { display: inline-block; padding: 10px 20px; background-color: #2196f3; color: white; border-radius: 4px; cursor: pointer; transition: background-color 0.2s; }
+      .file-input-label:hover { background-color: #1976d2; }
+      #fileInput { display: none; }
+      .error { background-color: rgba(255, 0, 0, 0.1); border: 1px solid #ff4444; color: #ff8888; padding: 10px; border-radius: 4px; margin-bottom: 20px; display: none; }
+      .stops-list { margin-top: 20px; display: none; }
+      .route-section { margin-bottom: 30px; padding: 15px; border-radius: 8px; background-color: #262626; position: relative; }
+      .route-section::before { content: "↓"; position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 24px; color: #888; z-index: 1; }
+      .route-section:last-child::before { display: none; }
+      .route-section h3 { color: #2196f3; margin-bottom: 15px; padding-bottom: 5px; border-bottom: 2px solid #404040; }
+      .stop-list { list-style: none; padding: 0; }
+      .stop-item { padding: 8px; background-color: #333; border-radius: 4px; margin-bottom: 5px; display: flex; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+      .stop-number { background-color: #2196f3; color: white; width: 24px; height: 24px; border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 10px; font-size: 0.8em; }
+      .map-link { display: inline-block; margin-top: 20px; padding: 10px 20px; background-color: #00c853; color: white; text-decoration: none; border-radius: 4px; transition: background-color 0.2s; font-weight: bold; border: none; cursor: pointer; }
+      .map-link:hover { background-color: #00a844; }
+      .route-info { background-color: #333; padding: 15px; border-radius: 4px; margin-bottom: 20px; color: #e0e0e0; }
+      .help-text { color: #888; font-size: 0.9em; margin-top: 10px; }
+    </style>
+    <div class="container">
+      <h1>Bus Route Planner</h1>
+      <div class="upload-area" id="uploadArea">
+        <div class="upload-icon">📁</div>
+        <label class="file-input-label">
+          Upload CSV File
+          <input type="file" id="fileInput" accept=".csv">
+        </label>
+        <p class="help-text">CSV should contain 'name' and 'address' columns</p>
+      </div>
+      <div id="error" class="error"></div>
+      <div id="routeDisplay" class="stops-list"></div>
+    </div>
+  `;
+
+  class BusRoutePlanner extends HTMLElement {
+    constructor() {
+      super();
+      this.attachShadow({ mode: 'open' }).appendChild(template.content.cloneNode(true));
+      this.initialize();
+    }
+
+    initialize() {
+      this.fileInput = this.shadowRoot.getElementById('fileInput');
+      this.errorDiv = this.shadowRoot.getElementById('error');
+      this.routeDisplay = this.shadowRoot.getElementById('routeDisplay');
+      this.uploadArea = this.shadowRoot.getElementById('uploadArea');
+
+      this.fileInput.addEventListener('change', e => this.handleFileSelect(e));
+
+      // Add drag-and-drop event listeners
+      this.uploadArea.addEventListener('dragover', e => this.handleDragOver(e));
+      this.uploadArea.addEventListener('dragenter', e => this.handleDragEnter(e));
+      this.uploadArea.addEventListener('dragleave', e => this.handleDragLeave(e));
+      this.uploadArea.addEventListener('drop', e => this.handleDrop(e));
+
+      if (!window.Papa) {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js';
+        document.head.appendChild(script);
+      }
+    }
+
+    handleDragOver(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.uploadArea.classList.add('dragover');
+    }
+
+    handleDragEnter(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.uploadArea.classList.add('dragover');
+    }
+
+    handleDragLeave(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.uploadArea.classList.remove('dragover');
+    }
+
+    handleDrop(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      this.uploadArea.classList.remove('dragover');
+
+      const files = e.dataTransfer.files;
+      if (files.length > 0 && files[0].type === 'text/csv') {
+        this.handleFileSelect({ target: { files } });
+      } else {
+        this.showError('Please drop a valid CSV file.');
+      }
+    }
+
+    optimizeAddresses(addresses) {
+      const parsed = addresses.map(addr => {
+        const parts = addr.address.split(',')[0].trim().split(' ');
+        const streetNum = parseInt(parts[0]) || 0;
+        const hasNorth = /\b[nN]\b/.test(addr.address);
+        const hasSouth = /\b[sS]\b/.test(addr.address);
+        const hasEast = /\b[eE]\b/.test(addr.address);
+        const hasWest = /\b[wW]\b/.test(addr.address);
+        const roadParts = parts.slice(1).join(' ');
+        return {
+          ...addr,
+          streetNum,
+          cardinals: { north: hasNorth, south: hasSouth, east: hasEast, west: hasWest },
+          road: roadParts
+        };
+      });
+
+      const groups = {
+        north: parsed.filter(a => a.cardinals.north),
+        south: parsed.filter(a => a.cardinals.south),
+        east: parsed.filter(a => a.cardinals.east),
+        west: parsed.filter(a => a.cardinals.west),
+        other: parsed.filter(a => !a.cardinals.north && !a.cardinals.south && !a.cardinals.east && !a.cardinals.west)
+      };
+
+      Object.keys(groups).forEach(key => groups[key].sort((a, b) => a.streetNum - b.streetNum));
+      return { optimizedStops: [...groups.north, ...groups.south, ...groups.east, ...groups.west, ...groups.other], groups };
+    }
+
+    displayRoute(routeData) {
+      this.routeDisplay.innerHTML = '';
+      const totalStops = Object.values(routeData.groups).reduce((sum, group) => sum + group.length, 0);
+      const routeInfo = document.createElement('div');
+      routeInfo.className = 'route-info';
+      routeInfo.innerHTML = `<strong>Total Stops:</strong> ${totalStops}`;
+      this.routeDisplay.appendChild(routeInfo);
+
+      let stopNumber = 1;
+      const directionLabels = { north: 'Northern Routes', south: 'Southern Routes', east: 'Eastern Routes', west: 'Western Routes', other: 'Other Routes' };
+
+      Object.entries(routeData.groups).forEach(([direction, stops]) => {
+        if (stops.length === 0) return;
+        const section = document.createElement('div');
+        section.className = 'route-section';
+        section.innerHTML = `
+          <h3>${directionLabels[direction]}</h3>
+          <ul class="stop-list">
+            ${stops.map(stop => `
+              <li class="stop-item">
+                <span class="stop-number">${stopNumber++}</span>
+                <span>${stop.name}: ${stop.address}</span>
+              </li>
+            `).join('')}
+          </ul>
+        `;
+        this.routeDisplay.appendChild(section);
+      });
+
+      this.routeDisplay.style.display = 'block';
+      this.generateMapLink(routeData.optimizedStops);
+    }
+
+    generateMapLink(addresses) {
+      const baseUrl = 'https://www.google.com/maps/dir/';
+      const routeUrl = baseUrl + addresses.map(stop => encodeURIComponent(stop.address)).join('/');
+      const container = document.createElement('div');
+      container.style.textAlign = 'center';
+      const mapButton = document.createElement('button');
+      mapButton.className = 'map-link';
+      mapButton.textContent = 'Open Route in Google Maps';
+      mapButton.onclick = () => window.open(routeUrl, '_blank');
+      container.appendChild(mapButton);
+      this.routeDisplay.appendChild(container);
+    }
+
+    handleFileSelect(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => this.handleParsedData(results),
+        error: (error) => this.showError(`Error parsing CSV: ${error.message}`)
+      });
+    }
+
+    handleParsedData(results) {
+      if (results.errors.length > 0) return this.showError('Error parsing CSV file');
+      const validAddresses = results.data.filter(row => row.address?.trim());
+      if (validAddresses.length === 0) return this.showError('No valid addresses found');
+      this.hideError();
+      this.displayRoute(this.optimizeAddresses(validAddresses));
+    }
+
+    showError(message) {
+      this.errorDiv.textContent = message;
+      this.errorDiv.style.display = 'block';
+      this.routeDisplay.style.display = 'none';
+    }
+
+    hideError() {
+      this.errorDiv.style.display = 'none';
+    }
+  }
+
+  customElements.define('bus-route-planner', BusRoutePlanner);
+  document.getElementById('bus-route-planner-container').appendChild(document.createElement('bus-route-planner'));
+})();
+</script>

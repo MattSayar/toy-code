@@ -61,3 +61,10 @@ A browser-based musical step sequencer featuring:
 [Play it now](https://code.mattsayar.com/new-bmi-calc.html)
 
 An intuitive BMI calculator tool using a "new BMI" calculation.
+
+## Utility Tools
+
+### Bus Route Planner
+[Play it now](https://code.mattsayar.com/bus-route-planner.html)
+
+A web-based tool for optimizing school bus routes. Upload a CSV file with stop addresses to automatically organize routes by cardinal direction and generate optimized Google Maps navigation links.
