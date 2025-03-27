@@ -27,6 +27,16 @@ An interactive game for practicing number recognition and counting with visual a
 
 A game to help students compare and understand number sizes.
 
+### Addition Memory Game
+[Play it now](https://code.mattsayar.com/addition-memory-matching.html)
+
+A matching card game to practice addition facts by pairing equations with their answers.
+
+### Three-in-a-Row Grid Game
+[Play it now](https://code.mattsayar.com/grid-game.html)
+
+A two-player strategy game combining place value and spatial reasoning. Players draw cards to form two-digit numbers and place them on a 100-grid, aiming to get three in a row while practicing tens and ones.
+
 ## Sports Games
 
 ### NFL Division Quiz

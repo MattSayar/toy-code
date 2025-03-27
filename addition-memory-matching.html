@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Addition Memory Game</title>
+  <style>
+    /* Dark theme colors with improved contrast */
+    :root {
+      --bg-dark: #0f172a;
+      --bg-card: #1e293b;
+      --bg-card-hover: #334155;
+      --blue-bg: #1e3a8a;
+      --blue-text: #93c5fd;
+      --orange-bg: #9a3412;
+      --orange-text: #fdba74;
+      --green-bg: #065f46;
+      --green-text: #6ee7b7;
+      --yellow-text: #fde047;
+      --text-light: #f8fafc;
+      --text-gray: #cbd5e1;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-light);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+    }
+
+    .container {
+      max-width: 1000px;
+      width: 100%;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .title {
+      font-size: 1.75rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      color: var(--blue-text);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .round-display {
+      background-color: var(--bg-card);
+      padding: 0.5rem 1rem;
+      border-radius: 0.75rem;
+      margin-bottom: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .round-label {
+      font-weight: bold;
+      color: var(--blue-text);
+    }
+
+    .message-display {
+      background-color: var(--bg-card);
+      padding: 0.75rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+      width: 100%;
+      max-width: 500px;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .message-text {
+      font-weight: 600;
+      color: var(--yellow-text);
+      font-size: 1.1rem;
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      align-items: center;
+      gap: 3rem;
+      width: 100%;
+    }
+
+    .card-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .card-title {
+      font-weight: bold;
+      text-align: center;
+      margin-bottom: 0.75rem;
+      font-size: 1.2rem;
+    }
+
+    .equations-title {
+      color: var(--blue-text);
+    }
+
+    .answers-title {
+      color: var(--orange-text);
+    }
+
+    .equal-sign {
+      font-size: 5rem;
+      font-weight: bold;
+      color: var(--text-gray);
+      align-self: center;
+      text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+      margin: 0 0.5rem;
+      transform: translateY(6px);
+      line-height: 1;
+    }
+
+    .cards-container {
+      overflow-y: auto;
+      max-height: 24rem;
+      padding: 0.5rem;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem;
+      width: 14rem;
+      margin: 0.25rem;
+    }
+
+    .card {
+      height: 4rem;
+      width: 6rem;
+      border-radius: 1rem;
+      transition: all 0.2s;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      position: relative;
+      margin: 0.25rem;
+    }
+
+    .card-equation {
+      background-color: var(--bg-card);
+    }
+
+    .card-equation:hover:not(.card-matched, .card-flipped) {
+      background-color: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+    }
+
+    .card-result {
+      background-color: var(--bg-card);
+    }
+
+    .card-result:hover:not(.card-matched, .card-flipped) {
+      background-color: var(--bg-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+      z-index: 10;
+    }
+
+    .card-flipped.card-equation {
+      background-color: var(--blue-bg);
+      box-shadow: 0 0 0 3px rgba(147, 197, 253, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-flipped.card-result {
+      background-color: var(--orange-bg);
+      box-shadow: 0 0 0 3px rgba(253, 186, 116, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-matched {
+      background-color: var(--green-bg) !important;
+      opacity: 0.9;
+      transform: none !important;
+      box-shadow: 0 0 0 3px rgba(110, 231, 183, 0.3), 0 4px 8px rgba(0, 0, 0, 0.3) !important;
+    }
+
+    .card-text {
+      font-size: 1.35rem;
+      font-weight: bold;
+    }
+
+    .card-equation .card-text {
+      color: var(--blue-text);
+    }
+
+    .card-equation.card-flipped .card-text {
+      color: var(--text-light);
+      font-weight: normal;
+    }
+
+    .card-result .card-text {
+      color: var(--orange-text);
+    }
+
+    .card-result.card-flipped .card-text {
+      color: var(--text-light);
+    }
+
+    .card-matched .card-text {
+      color: var(--green-text) !important;
+    }
+
+    .progress {
+      margin-top: 1.5rem;
+      color: var(--text-light);
+      background-color: var(--bg-card);
+      padding: 0.5rem 1.25rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+      font-weight: 500;
+      font-size: 1.1rem;
+    }
+
+    .welcome-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2rem;
+    }
+
+    .welcome-title {
+      font-size: 2.25rem;
+      font-weight: bold;
+      margin-bottom: 1.5rem;
+      color: var(--blue-text);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .welcome-card {
+      background-color: var(--bg-card);
+      padding: 1.75rem;
+      border-radius: 1rem;
+      margin-bottom: 1.5rem;
+      max-width: 28rem;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .welcome-text {
+      margin-bottom: 1rem;
+      font-size: 1.1rem;
+    }
+
+    .welcome-highlight {
+      font-weight: 600;
+      color: var(--blue-text);
+      font-size: 1.15rem;
+    }
+
+    .completed-screen {
+      text-align: center;
+      background-color: var(--bg-card);
+      padding: 2.5rem;
+      border-radius: 1rem;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+    }
+
+    .completed-title {
+      font-size: 1.75rem;
+      font-weight: bold;
+      margin-bottom: 1rem;
+      color: var(--green-text);
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .completed-text {
+      margin-bottom: 1.75rem;
+      color: var(--green-text);
+      font-size: 1.15rem;
+      font-weight: 500;
+    }
+
+    .btn {
+      font-weight: bold;
+      padding: 0.85rem 1.75rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: none;
+      color: white;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
+      font-size: 1.1rem;
+      letter-spacing: 0.5px;
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn-blue {
+      background-color: var(--blue-bg);
+    }
+
+    .btn-blue:hover {
+      background-color: #1d4ed8;
+    }
+
+    .btn-green {
+      background-color: var(--green-bg);
+    }
+
+    .btn-green:hover {
+      background-color: #047857;
+    }
+
+    /* Media query for mobile */
+    @media (max-width: 640px) {
+      .game-container {
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      
+      .equal-sign {
+        transform: rotate(90deg);
+        margin: 0.5rem 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="game-container">
+    <!-- Welcome screen will be shown first -->
+    <div class="welcome-screen" id="welcome-screen">
+      <h1 class="welcome-title">Addition Memory Game</h1>
+      <div class="welcome-card">
+        <p class="welcome-text">Match addition facts with their answers!</p>
+        <p class="welcome-highlight">New pairs added each round.</p>
+      </div>
+      <button class="btn btn-blue" id="start-button">Start Game</button>
+    </div>
+
+    <!-- Game screen will be shown after starting -->
+    <div id="game-screen" style="display: none; width: 100%;">
+      <h1 class="title">Addition Memory Game</h1>
+      <div class="round-display">
+        <span class="round-label">Round:</span> <span id="round-number">1</span>
+      </div>
+      <div class="message-display">
+        <p class="message-text" id="message-text">Flip cards to find matching pairs!</p>
+      </div>
+
+      <!-- Game area with equations, equal sign, and results -->
+      <div class="game-container">
+        <!-- Equation Cards (Left side) -->
+        <div class="card-section">
+          <h3 class="card-title equations-title">Equations</h3>
+          <div class="cards-container">
+            <div class="cards-grid" id="equation-cards">
+              <!-- Equation cards will be added here dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Equals Sign (Middle) -->
+        <div class="equal-sign">=</div>
+
+        <!-- Result Cards (Right side) -->
+        <div class="card-section">
+          <h3 class="card-title answers-title">Answers</h3>
+          <div class="cards-container">
+            <div class="cards-grid" id="result-cards">
+              <!-- Result cards will be added here dynamically -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Progress display -->
+      <div class="progress">
+        <p>Matches: <span id="pairs-found">0</span>/<span id="total-pairs">0</span></p>
+      </div>
+    </div>
+
+    <!-- Completed screen will be shown at the end -->
+    <div class="completed-screen" id="completed-screen" style="display: none;">
+      <h2 class="completed-title">Game Completed!</h2>
+      <p class="completed-text">Great job! You're an addition master!</p>
+      <button class="btn btn-green" id="play-again-button">Play Again</button>
+    </div>
+  </div>
+
+  <script>
+    // DOM elements
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const completedScreen = document.getElementById('completed-screen');
+    const startButton = document.getElementById('start-button');
+    const playAgainButton = document.getElementById('play-again-button');
+    const equationCardsContainer = document.getElementById('equation-cards');
+    const resultCardsContainer = document.getElementById('result-cards');
+    const roundNumber = document.getElementById('round-number');
+    const messageText = document.getElementById('message-text');
+    const pairsFound = document.getElementById('pairs-found');
+    const totalPairs = document.getElementById('total-pairs');
+
+    // Game state
+    let equationCards = [];
+    let resultCards = [];
+    let flippedEquations = [];
+    let flippedResults = [];
+    let matchedPairs = [];
+    let round = 1;
+    let roundComplete = false;
+
+    // Possible equations
+    const possibleEquations = [
+      { equation: '1 + 1', result: 2 },
+      { equation: '1 + 2', result: 3 },
+      { equation: '2 + 1', result: 3 },
+      { equation: '1 + 3', result: 4 },
+      { equation: '2 + 2', result: 4 },
+      { equation: '3 + 1', result: 4 },
+      { equation: '1 + 4', result: 5 },
+      { equation: '2 + 3', result: 5 },
+      { equation: '3 + 2', result: 5 },
+      { equation: '4 + 1', result: 5 }
+    ];
+
+    // Calculate result of an equation
+    function calculateEquationResult(equation) {
+      const parts = equation.split('+');
+      const num1 = parseInt(parts[0].trim());
+      const num2 = parseInt(parts[1].trim());
+      return num1 + num2;
+    }
+
+    // Generate cards for a round
+    function generateCards(roundNum) {
+      const numEquations = Math.min(2 + (roundNum - 1) * 2, possibleEquations.length);
+      
+      // Shuffle and select equations
+      const shuffledEquations = [...possibleEquations].sort(() => Math.random() - 0.5);
+      const selectedEquations = shuffledEquations.slice(0, numEquations);
+      
+      // Get unique results
+      const uniqueResults = [...new Set(selectedEquations.map(item => item.result))];
+      
+      let newEquationCards = [];
+      let newResultCards = [];
+      
+      // Create equation cards
+      selectedEquations.forEach((item, index) => {
+        newEquationCards.push({ 
+          id: `eq-${index}`, 
+          content: item.equation, 
+          result: item.result,
+          matched: false
+        });
+      });
+      
+      // Create result cards (one for each unique result)
+      uniqueResults.forEach((result, index) => {
+        newResultCards.push({ 
+          id: `res-${index}`, 
+          content: result.toString(), 
+          result: result,
+          matched: false
+        });
+      });
+      
+      // Add duplicate result cards if needed
+      if (newResultCards.length < newEquationCards.length) {
+        const resultCounts = {};
+        selectedEquations.forEach(item => {
+          resultCounts[item.result] = (resultCounts[item.result] || 0) + 1;
+        });
+        
+        Object.entries(resultCounts).forEach(([result, count]) => {
+          const numResult = parseInt(result);
+          for (let i = 1; i < count; i++) {
+            newResultCards.push({ 
+              id: `res-${newResultCards.length}`, 
+              content: numResult.toString(), 
+              result: numResult,
+              matched: false
+            });
+          }
+        });
+      }
+      
+      // Return the cards with results shuffled
+      return {
+        equationCards: newEquationCards,
+        resultCards: newResultCards.sort(() => Math.random() - 0.5)
+      };
+    }
+
+    // Render cards to the DOM
+    function renderCards() {
+      // Clear the containers
+      equationCardsContainer.innerHTML = '';
+      resultCardsContainer.innerHTML = '';
+      
+      // Create and append equation cards
+      equationCards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = `card card-equation ${card.matched ? 'card-matched' : ''}`;
+        cardElement.dataset.index = index;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'card-text';
+        textElement.textContent = card.matched || flippedEquations.includes(index) ? card.content : '?';
+        
+        cardElement.appendChild(textElement);
+        cardElement.addEventListener('click', () => handleEquationCardClick(index));
+        
+        if (flippedEquations.includes(index)) {
+          cardElement.classList.add('card-flipped');
+        }
+        
+        equationCardsContainer.appendChild(cardElement);
+      });
+      
+      // Create and append result cards
+      resultCards.forEach((card, index) => {
+        const cardElement = document.createElement('div');
+        cardElement.className = `card card-result ${card.matched ? 'card-matched' : ''}`;
+        cardElement.dataset.index = index;
+        
+        const textElement = document.createElement('span');
+        textElement.className = 'card-text';
+        textElement.textContent = card.matched || flippedResults.includes(index) ? card.content : '?';
+        
+        cardElement.appendChild(textElement);
+        cardElement.addEventListener('click', () => handleResultCardClick(index));
+        
+        if (flippedResults.includes(index)) {
+          cardElement.classList.add('card-flipped');
+        }
+        
+        resultCardsContainer.appendChild(cardElement);
+      });
+      
+      // Update the progress display
+      pairsFound.textContent = matchedPairs.length;
+      totalPairs.textContent = equationCards.length;
+    }
+
+    // Handle equation card click
+    function handleEquationCardClick(index) {
+      // Prevent clicking if:
+      // - card is already flipped
+      // - card is already matched
+      // - an equation is already flipped
+      // - round is complete
+      if (
+        flippedEquations.includes(index) ||
+        equationCards[index].matched ||
+        flippedEquations.length > 0 ||
+        roundComplete
+      ) {
+        return;
+      }
+      
+      flippedEquations = [index];
+      renderCards();
+      checkMatch();
+    }
+
+    // Handle result card click
+    function handleResultCardClick(index) {
+      // Prevent clicking if:
+      // - card is already flipped
+      // - card is already matched
+      // - a result is already flipped
+      // - round is complete
+      if (
+        flippedResults.includes(index) ||
+        resultCards[index].matched ||
+        flippedResults.length > 0 ||
+        roundComplete
+      ) {
+        return;
+      }
+      
+      flippedResults = [index];
+      renderCards();
+      checkMatch();
+    }
+
+    // Check for matches
+    function checkMatch() {
+      // Only check when we have one equation and one result flipped
+      if (flippedEquations.length === 1 && flippedResults.length === 1) {
+        const equationIndex = flippedEquations[0];
+        const resultIndex = flippedResults[0];
+        
+        const equationValue = calculateEquationResult(equationCards[equationIndex].content);
+        const resultValue = parseInt(resultCards[resultIndex].content);
+        
+        if (equationValue === resultValue) {
+          // Found a match
+          matchedPairs.push(equationCards[equationIndex].id);
+          messageText.textContent = `${equationCards[equationIndex].content} = ${resultCards[resultIndex].content}`;
+          
+          // Update matched status
+          equationCards[equationIndex].matched = true;
+          resultCards[resultIndex].matched = true;
+          
+          // Clear flipped cards
+          flippedEquations = [];
+          flippedResults = [];
+          
+          // Render the updated cards
+          renderCards();
+          
+          // Check if round is complete
+          checkRoundComplete();
+        } else {
+          // Not a match
+          messageText.textContent = "Try again";
+          
+          // Reset flipped cards after a delay
+          setTimeout(() => {
+            flippedEquations = [];
+            flippedResults = [];
+            renderCards();
+          }, 1200);
+        }
+      }
+    }
+
+    // Check if round is complete
+    function checkRoundComplete() {
+      if (equationCards.every(card => card.matched) && resultCards.every(card => card.matched)) {
+        roundComplete = true;
+        
+        if (round < 5) { // Cap at round 5
+          messageText.textContent = `Round ${round} complete!`;
+          
+          setTimeout(() => {
+            startNewRound(round + 1);
+          }, 3000);
+        } else {
+          // Game completed
+          showCompletedScreen();
+        }
+      }
+    }
+
+    // Start a new round
+    function startNewRound(roundNum) {
+      round = roundNum;
+      roundNumber.textContent = round;
+      
+      const cards = generateCards(round);
+      equationCards = cards.equationCards;
+      resultCards = cards.resultCards;
+      
+      flippedEquations = [];
+      flippedResults = [];
+      matchedPairs = [];
+      roundComplete = false;
+      
+      messageText.textContent = `Round ${round}: Find matching pairs`;
+      
+      renderCards();
+    }
+
+    // Start the game
+    function startGame() {
+      // Hide welcome screen, show game screen
+      welcomeScreen.style.display = 'none';
+      gameScreen.style.display = 'flex';
+      gameScreen.style.flexDirection = 'column';
+      gameScreen.style.alignItems = 'center';
+      completedScreen.style.display = 'none';
+      
+      // Start with round 1
+      startNewRound(1);
+    }
+
+    // Show completed screen
+    function showCompletedScreen() {
+      gameScreen.style.display = 'none';
+      completedScreen.style.display = 'block';
+    }
+
+    // Event listeners
+    startButton.addEventListener('click', startGame);
+    
+    playAgainButton.addEventListener('click', () => {
+      completedScreen.style.display = 'none';
+      round = 0; // Will be incremented to 1 in startNewRound
+      startGame();
+    });
+  </script>
+</body>
+</html>

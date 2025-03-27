@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Three-in-a-Row Place Value Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #121212;
+            color: #e0e0e0;
+            transition: box-shadow 0.5s ease;
+        }
+        h1 {
+            color: #3498db;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .game-header {
+            width: 100%;
+            max-width: 500px; /* Match grid width */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .instructions {
+            background-color: #1e1e1e;
+            padding: 8px 12px;
+            border-radius: 5px;
+            border-left: 4px solid #3498db;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .instructions ol {
+            margin: 3px 0 3px 18px;
+            padding: 0;
+        }
+        .instructions li {
+            margin-bottom: 2px;
+        }
+        .game-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        .player-info {
+            display: flex;
+            gap: 15px;
+        }
+        .player {
+            padding: 5px 8px;
+            border-radius: 5px;
+            transition: all 0.3s;
+            font-size: 14px;
+            text-align: center;
+            min-width: 90px;
+        }
+        .player1-text {
+            color: #03dac6;
+            border: 1px solid transparent;
+        }
+        .player2-text {
+            color: #cf6679;
+            border: 1px solid transparent;
+        }
+        .active-player {
+            font-weight: bold;
+            border: 1px solid currentColor;
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .card-area {
+            display: flex;
+            gap: 8px;
+        }
+        .card {
+            width: 35px;
+            height: 50px;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .button {
+            background-color: #3498db;
+            color: #fff;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+        .button:disabled {
+            background-color: #444;
+            color: #888;
+            cursor: not-allowed;
+        }
+        .hundreds-chart {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            gap: 4px;
+            max-width: 500px;
+            margin: 10px auto;
+            width: 100%;
+            justify-items: center;
+        }
+        .cell {
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2d2d2d;
+            border: 1px solid #444;
+            font-size: 16px;
+            transition: all 0.2s;
+            color: #e0e0e0;
+            border-radius: 3px;
+        }
+        .cell:hover:not(.player1):not(.player2) {
+            background-color: #3d3d3d;
+        }
+        .cell.clickable {
+            cursor: pointer;
+        }
+        .cell.disabled {
+            cursor: not-allowed;
+        }
+        .player1 {
+            background-color: #03dac6;
+            color: #000;
+            cursor: not-allowed;
+        }
+        .player2 {
+            background-color: #cf6679;
+            color: #000;
+            cursor: not-allowed;
+        }
+        .winner-message {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.85);
+            z-index: 100;
+            display: none;
+        }
+        
+        .winner-content {
+            padding: 30px 50px;
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            border: 3px solid;
+            text-align: center;
+            animation: winner-pulse 1.5s infinite alternate;
+            max-width: 90%;
+        }
+        
+        .player1-win {
+            border-color: #03dac6;
+            box-shadow: 0 0 30px rgba(3, 218, 198, 0.5);
+        }
+        
+        .player2-win {
+            border-color: #cf6679;
+            box-shadow: 0 0 30px rgba(207, 102, 121, 0.5);
+        }
+        
+        .winner-title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        
+        .winner-subtitle {
+            font-size: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .close-winner {
+            margin-top: 20px;
+        }
+        
+        @keyframes winner-pulse {
+            0% {
+                transform: scale(1);
+            }
+            100% {
+                transform: scale(1.05);
+            }
+        }
+        .restart {
+            margin-top: 10px;
+            background-color: #9b59b6;
+        }
+        .restart:hover {
+            background-color: #8e44ad;
+        }
+    </style>
+</head>
+<body>
+    <h1>Three-in-a-Row Grid Game</h1>
+    
+    <div class="game-container">
+        <div class="game-header">
+            <div class="instructions">
+                <p><strong>How to play:</strong></p>
+                <ol>
+                    <li>Draw two cards (0-9) to get your digits.</li>
+                    <li>Look at your cards and decide which two-digit number to make (tens place and ones place).</li>
+                    <li>A card with 0 can be used as a single digit or in a place value position.</li>
+                    <li>Find and click that number on the grid to claim it.</li>
+                    <li>Get three in a row (horizontally, vertically, or diagonally) to win!</li>
+                </ol>
+            </div>
+            
+            <div class="game-controls">
+                <div class="player-info">
+                    <div class="player player1-text active-player" id="player1">Player 1</div>
+                    <div class="player player2-text" id="player2">Player 2</div>
+                </div>
+                
+                <div class="controls">
+                    <div class="card-area">
+                        <div class="card" id="card1">-</div>
+                        <div class="card" id="card2">-</div>
+                    </div>
+                    <button class="button" id="drawButton">Draw Cards</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="hundreds-chart" id="hundredsChart">
+            <!-- Will be populated with JavaScript -->
+        </div>
+        
+        <div class="winner-message" id="winnerMessage">
+            <div class="winner-content" id="winnerContent">
+                <div class="winner-title" id="winnerTitle">Player 1 Wins!</div>
+                <div class="winner-subtitle">Three in a Row!</div>
+                <button class="button restart close-winner" id="closeWinner">Play Again</button>
+            </div>
+        </div>
+        
+        <button class="button restart" id="restartButton">Restart Game</button>
+    </div>
+    
+    <script>
+        // Game state
+        let currentPlayer = 1;
+        let card1Value = null;
+        let card2Value = null;
+        let validOptions = [];
+        let gameActive = true;
+        let selectedCells = {
+            player1: [],
+            player2: []
+        };
+        
+        // DOM elements
+        const hundredsChart = document.getElementById('hundredsChart');
+        const card1Element = document.getElementById('card1');
+        const card2Element = document.getElementById('card2');
+        const drawButton = document.getElementById('drawButton');
+        const player1Element = document.getElementById('player1');
+        const player2Element = document.getElementById('player2');
+        const winnerMessage = document.getElementById('winnerMessage');
+        const winnerTitle = document.getElementById('winnerTitle');
+        const restartButton = document.getElementById('restartButton');
+        const closeWinner = document.getElementById('closeWinner');
+        
+        // Initialize the hundreds chart
+        function initializeChart() {
+            hundredsChart.innerHTML = '';
+            for (let i = 1; i <= 100; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.textContent = i;
+                cell.dataset.number = i;
+                cell.addEventListener('click', () => selectCell(cell));
+                hundredsChart.appendChild(cell);
+            }
+        }
+        
+        // Draw cards
+        function drawCards() {
+            if (!gameActive) return;
+            
+            // Reset all cells to remove any previous styling
+            resetCellStyles();
+            
+            // Generate random numbers 0-9 (include 0, exclude 10)
+            card1Value = Math.floor(Math.random() * 10);
+            card2Value = Math.floor(Math.random() * 10);
+            
+            // Update card display
+            card1Element.textContent = card1Value;
+            card2Element.textContent = card2Value;
+            
+            // If both cards are 0, redraw since we don't have a 0 on the grid
+            if (card1Value === 0 && card2Value === 0) {
+                setTimeout(drawCards, 300); // Redraw after a short delay
+                return;
+            }
+            
+            // Calculate possible number combinations
+            let validOptions = [];
+            
+            // If one card is 0 but the other isn't
+            if (card1Value === 0 || card2Value === 0) {
+                const nonZeroCard = card1Value === 0 ? card2Value : card1Value;
+                // Add both 0N and N0 options
+                validOptions.push(nonZeroCard);       // Single digit (just N, treating 0N as N)
+                validOptions.push(nonZeroCard * 10);  // N0
+            } 
+            // If neither card is 0
+            else {
+                const option1Value = (card1Value * 10) + card2Value;
+                const option2Value = (card2Value * 10) + card1Value;
+                validOptions.push(option1Value);
+                if (option1Value !== option2Value) {
+                    validOptions.push(option2Value);
+                }
+            }
+            
+            // Check if any options are already taken
+            validOptions = validOptions.filter(option => {
+                // Ensure the option is on the grid (between 1-100)
+                if (option < 1 || option > 100) return false;
+                
+                const optionTaken = document.querySelector(`.cell[data-number="${option}"].player1, .cell[data-number="${option}"].player2`);
+                return !optionTaken;
+            });
+            
+            // If no valid options are available, draw again
+            if (validOptions.length === 0) {
+                setTimeout(drawCards, 300); // Redraw after a short delay
+                return;
+            }
+            
+            // Store the valid options in the game state
+            window.validOptions = validOptions;
+            
+            // Apply cursor styles to cells based on drawn cards
+            updateCellCursors(validOptions);
+            
+            // Disable draw button until a number is selected
+            drawButton.disabled = true;
+        }
+        
+        // Update only cursor styles based on drawn cards
+        function updateCellCursors(validOptionsList) {
+            const cells = document.querySelectorAll('.cell');
+            
+            cells.forEach(cell => {
+                const cellNumber = parseInt(cell.dataset.number);
+                
+                // Skip cells that are already claimed
+                if (cell.classList.contains('player1') || cell.classList.contains('player2')) {
+                    return;
+                }
+                
+                // If the cell matches one of our options, make it clickable
+                if (validOptionsList.includes(cellNumber)) {
+                    cell.classList.add('clickable');
+                } else {
+                    // Otherwise, make it disabled
+                    cell.classList.add('disabled');
+                }
+            });
+        }
+        
+        // Reset all cell styles when needed
+        function resetCellStyles() {
+            const cells = document.querySelectorAll('.cell');
+            cells.forEach(cell => {
+                cell.classList.remove('clickable', 'disabled');
+            });
+        }
+        
+        // Select a cell on the hundreds chart
+        function selectCell(cell) {
+            if (!gameActive || cell.classList.contains('player1') || cell.classList.contains('player2')) {
+                return;
+            }
+            
+            // Check if the selected cell matches one of the valid options
+            const cellNumber = parseInt(cell.dataset.number);
+            
+            if (!window.validOptions.includes(cellNumber)) {
+                return;
+            }
+            
+            // Mark the cell for the current player
+            if (currentPlayer === 1) {
+                cell.classList.add('player1');
+                selectedCells.player1.push(cellNumber);
+            } else {
+                cell.classList.add('player2');
+                selectedCells.player2.push(cellNumber);
+            }
+            
+            // Check for a win
+            if (checkForWin(currentPlayer)) {
+                gameActive = false;
+                
+                // Update winner content
+                winnerTitle.textContent = `Player ${currentPlayer} Wins!`;
+                const winnerContent = document.getElementById('winnerContent');
+                if (currentPlayer === 1) {
+                    winnerContent.classList.add('player1-win');
+                    winnerContent.classList.remove('player2-win');
+                } else {
+                    winnerContent.classList.add('player2-win');
+                    winnerContent.classList.remove('player1-win');
+                }
+                
+                // Show winner message with a slight delay for dramatic effect
+                setTimeout(() => {
+                    winnerMessage.style.display = 'flex';
+                }, 300);
+                
+                drawButton.disabled = true;
+                return;
+            }
+            
+            // Switch to the next player
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updatePlayerDisplay();
+            
+            // Reset for next turn
+            drawButton.disabled = false;
+            card1Value = null;
+            card2Value = null;
+            window.validOptions = [];
+            card1Element.textContent = '-';
+            card2Element.textContent = '-';
+        }
+        
+        // Check if the current player has won
+        function checkForWin(player) {
+            const selectedNumbers = player === 1 ? selectedCells.player1 : selectedCells.player2;
+            
+            // Check horizontal wins (3 in a row)
+            for (let row = 0; row < 10; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const startNum = row * 10 + col + 1;
+                    if (
+                        selectedNumbers.includes(startNum) &&
+                        selectedNumbers.includes(startNum + 1) &&
+                        selectedNumbers.includes(startNum + 2)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+            
+            // Check vertical wins (3 in a row)
+            for (let col = 0; col < 10; col++) {
+                for (let row = 0; row < 8; row++) {
+                    const startNum = row * 10 + col + 1;
+                    if (
+                        selectedNumbers.includes(startNum) &&
+                        selectedNumbers.includes(startNum + 10) &&
+                        selectedNumbers.includes(startNum + 20)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+            
+            // Check diagonal wins (down-right) (3 in a row)
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const startNum = row * 10 + col + 1;
+                    if (
+                        selectedNumbers.includes(startNum) &&
+                        selectedNumbers.includes(startNum + 11) &&
+                        selectedNumbers.includes(startNum + 22)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+            
+            // Check diagonal wins (down-left) (3 in a row)
+            for (let row = 0; row < 8; row++) {
+                for (let col = 2; col < 10; col++) {
+                    const startNum = row * 10 + col + 1;
+                    if (
+                        selectedNumbers.includes(startNum) &&
+                        selectedNumbers.includes(startNum + 9) &&
+                        selectedNumbers.includes(startNum + 18)
+                    ) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        // Update player display
+        function updatePlayerDisplay() {
+            if (currentPlayer === 1) {
+                player1Element.classList.add('active-player');
+                player2Element.classList.remove('active-player');
+                player1Element.textContent = "Player 1's Turn";
+                player2Element.textContent = "Player 2";
+                document.body.style.boxShadow = "inset 0 0 30px rgba(3, 218, 198, 0.3)";
+            } else {
+                player1Element.classList.remove('active-player');
+                player2Element.classList.add('active-player');
+                player1Element.textContent = "Player 1";
+                player2Element.textContent = "Player 2's Turn";
+                document.body.style.boxShadow = "inset 0 0 30px rgba(207, 102, 121, 0.3)";
+            }
+        }
+        
+        // Reset everything for a new game
+        function restartGame() {
+            // Reset game state
+            currentPlayer = 1;
+            card1Value = null;
+            card2Value = null;
+            window.validOptions = [];
+            gameActive = true;
+            selectedCells = {
+                player1: [],
+                player2: []
+            };
+            
+            // Reset UI
+            initializeChart();
+            card1Element.textContent = '-';
+            card2Element.textContent = '-';
+            drawButton.disabled = false;
+            winnerMessage.style.display = 'none';
+            resetCellStyles();
+            updatePlayerDisplay();
+        }
+        
+        // Event listeners
+        drawButton.addEventListener('click', drawCards);
+        restartButton.addEventListener('click', restartGame);
+        closeWinner.addEventListener('click', restartGame);
+        
+        // Initialize the game
+        initializeChart();
+        updatePlayerDisplay();
+    </script>
+</body>
+</html>
