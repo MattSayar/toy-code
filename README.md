@@ -49,11 +49,7 @@ Test your knowledge of NFL team divisions with this quick quiz game. Features te
 ### Step Sequencer
 [Play it now](https://code.mattsayar.com/matts-step-sequencer.html)
 
-A browser-based musical step sequencer featuring:
-- Drum instruments (kick, snare, hi-hat, clap, tom)
-- Melodic instruments (synth bass, pad, pluck, bell, arpeggio)
-- Adjustable tempo
-- 16-step pattern grid
+A browser-based musical step sequencer featuring drum and melodic instruments like kick, snare, synth bass, and more. It includes an adjustable tempo and a 16-step pattern grid for creating custom rhythms.
 
 ## Health Tools
 
