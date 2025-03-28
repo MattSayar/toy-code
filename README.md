@@ -64,3 +64,10 @@ An intuitive BMI calculator tool using a "new BMI" calculation.
 [Play it now](https://code.mattsayar.com/bus-route-planner.html)
 
 A web-based tool for optimizing school bus routes. Upload a CSV file with stop addresses to automatically organize routes by cardinal direction and generate optimized Google Maps navigation links.
+
+## Developer Tools
+
+### Incomplete JSON Pretty Printer
+[Try it now](https://code.mattsayar.com/partial-json-prettyprint.html)
+
+An interactive tool for formatting and syntax-highlighting incomplete or truncated JSON data. 
