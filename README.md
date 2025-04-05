@@ -7,6 +7,11 @@ Bunch of stuff I've vibe-coded or otherwise had fun making. Usually used on [mat
 
 An engaging game where students practice addition by helping a frog hop along a number line. Great for early math learners to visualize addition.
 
+### Unhoppy Frog
+[Play it now](https://code.mattsayar.com/hoppy-frog-subtraction.html)
+
+A subtraction variation of the Hoppy Frog game where students practice subtraction by helping a frog hop backwards along a number line. Includes visual feedback, multiple-choice answers, and subtraction with small numbers.
+
 ### Number Bonds v2
 [Play it now](https://code.mattsayar.com/number_bonds_v2.html)
 
@@ -70,4 +75,4 @@ A web-based tool for optimizing school bus routes. Upload a CSV file with stop a
 ### Incomplete JSON Pretty Printer
 [Try it now](https://code.mattsayar.com/partial-json-prettyprint.html)
 
-An interactive tool for formatting and syntax-highlighting incomplete or truncated JSON data. 
+An interactive tool for formatting and syntax-highlighting incomplete or truncated JSON data.
