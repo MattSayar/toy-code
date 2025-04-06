@@ -48,10 +48,13 @@
             width: 100%;
             gap: 5px;
             margin-bottom: 5px;
+            justify-content: flex-start;
         }
         .block {
-            width: 30px;
-            height: 30px;
+            flex: 0 0 auto;
+            width: calc((100% - 45px) / 10); /* Calculate width for 10 blocks with gaps */
+            aspect-ratio: 1 / 1; /* Keep blocks square */
+            min-width: 15px;
             background-color: #ff4d8d;
             border: 1px solid #ff0066;
             box-shadow: 0 0 5px rgba(255, 77, 141, 0.5);
