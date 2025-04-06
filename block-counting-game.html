@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Value Counting Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #e0e0e0;
+        }
+        h1 {
+            color: #ff4d8d;
+            margin-bottom: 20px;
+        }
+        .game-container {
+            background-color: #1e1e1e;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(255, 77, 141, 0.2);
+            padding: 20px;
+            width: 80%;
+            max-width: 600px;
+        }
+        .instruction {
+            font-size: 18px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .level {
+            margin-bottom: 30px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 20px;
+        }
+        .blocks-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 15px;
+        }
+        .block-row {
+            display: flex;
+            width: 100%;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .block {
+            width: 30px;
+            height: 30px;
+            background-color: #ff4d8d;
+            border: 1px solid #ff0066;
+            box-shadow: 0 0 5px rgba(255, 77, 141, 0.5);
+        }
+        .place-value {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 10px;
+        }
+        .place-box {
+            width: 60px;
+            height: 60px;
+            border: 2px solid #ff4d8d;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .tens {
+            background-color: #ff4d8d;
+            color: white;
+        }
+        .ones {
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+        }
+        .labels {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 5px;
+        }
+        .label {
+            width: 60px;
+            font-size: 14px;
+            text-align: center;
+            font-weight: bold;
+            color: #ff4d8d;
+        }
+        input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            background-color: transparent;
+            color: #e0e0e0;
+            -moz-appearance: textfield;
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input:focus {
+            outline: none;
+        }
+        .feedback {
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            height: 24px;
+            margin-top: 10px;
+        }
+        .correct {
+            color: green;
+        }
+        .wrong {
+            color: red;
+        }
+        .btn {
+            background-color: #ff4d8d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 10px 2px;
+            cursor: pointer;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(255, 77, 141, 0.3);
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #ff0066;
+            box-shadow: 0 0 15px rgba(255, 77, 141, 0.5);
+            transform: translateY(-2px);
+        }
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Count and Write the Numbers</h1>
+    <div class="game-container">
+        <p class="instruction">Count the blocks by tens and ones, then write the place values and total number.</p>
+        
+        <div id="level-container" class="level">
+            <!-- Game content will be generated here -->
+        </div>
+        
+        <div class="feedback" id="feedback"></div>
+        
+        <div class="btn-container">
+            <button id="next-btn" class="btn">Next Problem</button>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let currentLevel = 1;
+        let currentBlocks = 0;
+        let tens = 0;
+        let ones = 0;
+        
+        // Generate a random number between min and max (inclusive)
+        function getRandomNumber(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+        
+        // Generate a new problem
+        function generateProblem() {
+            // Clear feedback
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            // Generate random number of blocks between 10 and 30
+            currentBlocks = getRandomNumber(10, 30);
+            
+            // Calculate tens and ones
+            tens = Math.floor(currentBlocks / 10);
+            ones = currentBlocks % 10;
+            
+            const levelContainer = document.getElementById('level-container');
+            levelContainer.innerHTML = '';
+            
+            // Create block rows (10 blocks per row)
+            const blocksContainer = document.createElement('div');
+            blocksContainer.className = 'blocks-container';
+            
+            for (let i = 0; i < tens; i++) {
+                const blockRow = document.createElement('div');
+                blockRow.className = 'block-row';
+                
+                for (let j = 0; j < 10; j++) {
+                    const block = document.createElement('div');
+                    block.className = 'block';
+                    blockRow.appendChild(block);
+                }
+                
+                blocksContainer.appendChild(blockRow);
+            }
+            
+            // Add remaining ones
+            if (ones > 0) {
+                const blockRow = document.createElement('div');
+                blockRow.className = 'block-row';
+                
+                for (let j = 0; j < ones; j++) {
+                    const block = document.createElement('div');
+                    block.className = 'block';
+                    blockRow.appendChild(block);
+                }
+                
+                blocksContainer.appendChild(blockRow);
+            }
+            
+            levelContainer.appendChild(blocksContainer);
+            
+            // Create place value boxes
+            const labelsDiv = document.createElement('div');
+            labelsDiv.className = 'labels';
+            
+            const tensLabel = document.createElement('div');
+            tensLabel.className = 'label';
+            tensLabel.textContent = 'Tens';
+            
+            const onesLabel = document.createElement('div');
+            onesLabel.className = 'label';
+            onesLabel.textContent = 'Ones';
+            
+            labelsDiv.appendChild(tensLabel);
+            labelsDiv.appendChild(onesLabel);
+            
+            levelContainer.appendChild(labelsDiv);
+            
+            const placeValueDiv = document.createElement('div');
+            placeValueDiv.className = 'place-value';
+            
+            const tensBox = document.createElement('div');
+            tensBox.className = 'place-box tens';
+            const tensInput = document.createElement('input');
+            tensInput.type = 'number';
+            tensInput.id = 'tens-input';
+            tensInput.min = 0;
+            tensInput.max = 9;
+            tensInput.addEventListener('input', function() {
+                checkAnswer();
+                // If a value is entered, move focus to ones input
+                if (this.value !== '') {
+                    document.getElementById('ones-input').focus();
+                }
+            });
+            tensBox.appendChild(tensInput);
+            
+            const onesBox = document.createElement('div');
+            onesBox.className = 'place-box ones';
+            const onesInput = document.createElement('input');
+            onesInput.type = 'number';
+            onesInput.id = 'ones-input';
+            onesInput.min = 0;
+            onesInput.max = 9;
+            onesInput.addEventListener('input', checkAnswer);
+            onesBox.appendChild(onesInput);
+            
+            placeValueDiv.appendChild(tensBox);
+            placeValueDiv.appendChild(onesBox);
+            
+            levelContainer.appendChild(placeValueDiv);
+        }
+        
+        // Check if the answer is correct
+        function checkAnswer() {
+            const tensInput = document.getElementById('tens-input').value;
+            const onesInput = document.getElementById('ones-input').value;
+            
+            const feedback = document.getElementById('feedback');
+            
+            // Only check if both inputs have values
+            if (tensInput === '' || onesInput === '') {
+                feedback.textContent = '';
+                feedback.className = 'feedback';
+                return;
+            }
+            
+            if (tensInput == tens && onesInput == ones) {
+                feedback.textContent = 'Correct! Great job!';
+                feedback.className = 'feedback correct';
+                
+                // Auto-advance to next problem after a brief delay
+                setTimeout(() => {
+                    generateProblem();
+                    
+                    // Ensure focus is set to tens input after new problem is generated
+                    setTimeout(() => {
+                        const tensInputElement = document.getElementById('tens-input');
+                        if (tensInputElement) {
+                            tensInputElement.focus();
+                        }
+                    }, 100);
+                }, 1000); // 1 second delay before next problem
+                
+                return true;
+            } else {
+                let message = 'Not quite right. Check your counting!';
+                
+                if (tensInput != tens) {
+                    message = 'Check your tens count!';
+                } else if (onesInput != ones) {
+                    message = 'Check your ones count!';
+                }
+                
+                feedback.textContent = message;
+                feedback.className = 'feedback wrong';
+                return false;
+            }
+        }
+        
+        // Event listeners
+        document.getElementById('next-btn').addEventListener('click', function() {
+            generateProblem();
+            // Ensure focus is set to tens input after new problem is generated
+            setTimeout(() => {
+                document.getElementById('tens-input').focus();
+            }, 100);
+        });
+        
+        // Initialize the game
+        generateProblem();
+        
+        // Auto-focus on tens input after generating a problem
+        setTimeout(() => {
+            document.getElementById('tens-input').focus();
+        }, 100);
+    </script>
+</body>
+</html>
