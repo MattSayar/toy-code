@@ -45,7 +45,7 @@ A two-player strategy game combining place value and spatial reasoning. Players 
 ### Block Counting Game
 [Play it now](https://code.mattsayar.com/block-counting-game.html)
 
-A place value game where students count blocks arranged in tens and ones, then enter the correct place values. Features visual block representations, immediate feedback, and practice with two-digit numbers from 10-30.
+A place value game where students count blocks arranged in tens and ones, then enter the correct place values. Features visual block representations, immediate feedback, and practice with two-digit numbers from 10-40.
 
 ## Sports Games
 
