@@ -47,6 +47,11 @@ A two-player strategy game combining place value and spatial reasoning. Players 
 
 A place value game where students count blocks arranged in tens and ones, then enter the correct place values. Features visual block representations, immediate feedback, and practice with two-digit numbers from 10-40.
 
+### Adjustable Block Counting Game
+[Play it now](https://code.mattsayar.com/block-counting-game-adjustable.html)
+
+An enhanced version of the block counting game with adjustable settings. Students count blocks arranged in tens and ones while practicing place values. 
+
 ## Sports Games
 
 ### NFL Division Quiz
