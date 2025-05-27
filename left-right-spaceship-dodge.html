@@ -1,0 +1,990 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asteroid Blitz</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            color: #fff;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 90vw;
+            max-width: 800px;
+            height: 90vh;
+            max-height: 600px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+            border: 2px solid #0f3460;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(15, 52, 96, 0.5);
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(10px);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 10;
+        }
+
+        #healthBar {
+            width: 200px;
+            height: 20px;
+            background: #333;
+            border: 2px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #healthFill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff3838 0%, #ff6b6b 100%);
+            transition: width 0.3s ease;
+            box-shadow: 0 0 10px rgba(255, 56, 56, 0.5);
+        }
+
+        #levelDisplay {
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .controlBtn {
+            width: 80px;
+            height: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            color: #fff;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .controlBtn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+        }
+
+        .controlBtn:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        #startScreen, #gameOverScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(5px);
+        }
+
+        #startScreen h1, #gameOverScreen h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        #startScreen p, #gameOverScreen p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            text-align: center;
+            max-width: 400px;
+            line-height: 1.5;
+        }
+
+        .gameBtn {
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #0f3460 0%, #16213e 100%);
+            border: 2px solid #0f3460;
+            border-radius: 30px;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .gameBtn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(15, 52, 96, 0.5);
+        }
+
+        #audioWarning {
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            font-weight: bold;
+            text-transform: uppercase;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 15;
+            text-shadow: 0 0 30px currentColor;
+        }
+
+        #audioWarning.left {
+            color: #4ecdc4;
+            animation: pulseLeft 0.5s ease-out;
+        }
+
+        #audioWarning.right {
+            color: #4ecdc4;
+            animation: pulseRight 0.5s ease-out;
+        }
+
+        @keyframes pulseLeft {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @keyframes pulseRight {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            #controls {
+                bottom: 10px;
+            }
+            .controlBtn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+            #ui {
+                padding: 10px;
+            }
+            #levelDisplay {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div id="healthBar">
+                <div id="healthFill" style="width: 100%"></div>
+            </div>
+            <div style="text-align: center;">
+                <div id="scoreDisplay" style="font-size: 20px; margin-bottom: 5px;">Score: 0</div>
+                <div id="levelDisplay">Level 1</div>
+            </div>
+        </div>
+        
+        <div id="audioWarning"></div>
+        
+        <div id="controls">
+            <button class="controlBtn" id="leftBtn">←</button>
+            <button class="controlBtn" id="rightBtn">→</button>
+        </div>
+        
+        <button class="controlBtn" id="muteBtn" style="position: absolute; bottom: 20px; left: 20px; width: 50px; height: 50px; font-size: 20px;">🔇</button>
+        
+        <div id="startScreen">
+            <h1>ASTEROID BLITZ</h1>
+            <p>Dodge the asteroids.<br>React fast. Survive longer.</p>
+            <button class="gameBtn" id="startBtn">START</button>
+        </div>
+        
+        <div id="gameOverScreen" style="display: none;">
+            <h1>Game Over</h1>
+            <p id="finalScore">You reached Level 1</p>
+            <button class="gameBtn" id="restartBtn">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const healthFill = document.getElementById('healthFill');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScore = document.getElementById('finalScore');
+        const audioWarning = document.getElementById('audioWarning');
+
+        // Game state
+        let gameRunning = false;
+        let levelTransitioning = false; // Pause during level transitions
+        let level = 1;
+        let health = 100;
+        let maxHealth = 100;
+        let score = 0;
+        let ship = { x: 0, y: 0, targetX: 0, speed: 0.15, width: 40, height: 50 };
+        let obstacles = [];
+        let stars = [];
+        let particles = [];
+        let lastObstacleTime = 0;
+        let obstacleInterval = 2000; // Was 3000, now faster
+        let reactionTime = 700; // Was 1200, now matches old level 6
+        let levelProgress = 0;
+        let obstaclesPerLevel = 10;
+        let audioMuted = true; // Audio muted by default
+        let pendingObstacleTimeout = null; // Track obstacle creation timeout
+
+        // Set canvas size
+        function resizeCanvas() {
+            canvas.width = canvas.offsetWidth;
+            canvas.height = canvas.offsetHeight;
+            ship.y = canvas.height - 150; // Move ship higher to avoid button overlap
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Create audio context and voices
+        function speak(text) {
+            if (!audioMuted) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.rate = 1.3;
+                utterance.pitch = 1.0;
+                utterance.volume = 1.0;
+                speechSynthesis.speak(utterance);
+            }
+            
+            // Show visual warning (always show, even when muted)
+            audioWarning.textContent = text;
+            audioWarning.className = text.toLowerCase();
+            setTimeout(() => {
+                audioWarning.className = '';
+            }, 500);
+        }
+
+        // Initialize stars
+        function createStars() {
+            stars = [];
+            for (let i = 0; i < 100; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2 + 0.5,
+                    speed: Math.random() * 2 + 1
+                });
+            }
+        }
+
+        // Particle system
+        function createParticles(x, y, color, count = 20) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 15,
+                    vy: (Math.random() - 0.5) * 15,
+                    life: 1,
+                    color: color
+                });
+            }
+        }
+
+        // Game logic
+        function createObstacle() {
+            if (!gameRunning || levelTransitioning) return;
+            
+            // Check if this would be the last obstacle before level transition
+            const isLastObstacle = (levelProgress + 1) >= obstaclesPerLevel;
+            
+            // Decide which side the obstacle comes from
+            const dodgeDirection = Math.random() < 0.5 ? 'left' : 'right';
+            const obstacleFromSide = dodgeDirection === 'left' ? 'right' : 'left';
+            const obstacleId = Date.now(); // Unique ID for this obstacle
+            
+            // Only announce the dodge direction if this isn't triggering a level transition
+            if (!isLastObstacle) {
+                speak(dodgeDirection.toUpperCase());
+            }
+            
+            // Create obstacle data immediately with warning state
+            const newObstacle = {
+                id: obstacleId,
+                x: canvas.width / 2, // Start at center
+                y: -100,
+                width: 100,
+                height: 80,
+                speed: 15, // Vertical speed
+                fromSide: obstacleFromSide,
+                dodgeDirection: dodgeDirection,
+                active: true,
+                dodged: false, // Track if player has dodged this obstacle
+                tracking: false, // Will start tracking if player dodges wrong
+                warningActive: true, // This obstacle's warning is active
+                startTime: Date.now(), // When warning was given
+                visible: false, // Not visible until after reaction time
+                scoreAwarded: false // Track if points were awarded
+            };
+            
+            obstacles.push(newObstacle);
+            
+            // Make obstacle visible after reaction time
+            pendingObstacleTimeout = setTimeout(() => {
+                if (!gameRunning || levelTransitioning) return;
+                const obstacle = obstacles.find(o => o.id === obstacleId);
+                if (obstacle) {
+                    obstacle.visible = true;
+                }
+            }, reactionTime);
+            
+            levelProgress++;
+            if (levelProgress >= obstaclesPerLevel) {
+                nextLevel();
+            }
+        }
+
+        function dodge(direction) {
+            if (!gameRunning || levelTransitioning) return;
+            
+            // Move ship
+            if (direction === 'left') {
+                ship.targetX = -150;
+            } else {
+                ship.targetX = 150;
+            }
+            
+            // Check all active obstacles for scoring opportunities
+            obstacles.forEach(obstacle => {
+                if (obstacle.warningActive && !obstacle.scoreAwarded) {
+                    // Check if this dodge matches this obstacle's requirement
+                    if (direction === obstacle.dodgeDirection) {
+                        // Correct dodge - calculate score based on reaction time
+                        const reactionTime = Date.now() - obstacle.startTime;
+                        let points = 0;
+                        
+                        if (reactionTime < 200) {
+                            points = 100; // Lightning fast!
+                        } else if (reactionTime < 400) {
+                            points = 75; // Very fast
+                        } else if (reactionTime < 600) {
+                            points = 50; // Fast
+                        } else {
+                            points = 25; // Normal
+                        }
+                        
+                        // Add level multiplier
+                        points = points * level;
+                        score += points;
+                        scoreDisplay.textContent = `Score: ${score}`;
+                        
+                        // Show point popup
+                        showPointPopup(points, direction === 'left' ? -100 : 100);
+                        
+                        // Mark as scored
+                        obstacle.scoreAwarded = true;
+                        obstacle.dodged = true;
+                    } else {
+                        // Wrong dodge for this obstacle - immediate punishment
+                        if (!obstacle.punished) {
+                            takeDamage();
+                            const shipX = canvas.width / 2 + ship.x;
+                            createParticles(shipX, ship.y, '#ff0000', 40);
+                            obstacle.punished = true; // Don't punish twice for same obstacle
+                        }
+                    }
+                }
+            });
+            
+            // Don't auto-return to center - will return when safe
+        }
+
+        function checkCollisions() {
+            if (levelTransitioning) return; // Skip collision checks during level transitions
+            
+            const shipX = canvas.width / 2 + ship.x;
+            
+            obstacles.forEach((obstacle, index) => {
+                // Check if obstacle is near the ship's vertical position and visible
+                if (obstacle.visible && Math.abs(obstacle.y - ship.y) < (obstacle.height + ship.height) / 2 && obstacle.active) {
+                    const shouldDodgeLeft = obstacle.fromSide === 'right';
+                    const shouldDodgeRight = obstacle.fromSide === 'left';
+                    const isDoingLeft = ship.x < -50;
+                    const isDoingRight = ship.x > 50;
+                    const isInCenter = Math.abs(ship.x) < 50;
+                    
+                    // Hit conditions:
+                    // 1. Player is in center (didn't dodge)
+                    // 2. Player dodged the wrong way
+                    if (isInCenter || (shouldDodgeLeft && isDoingRight) || (shouldDodgeRight && isDoingLeft)) {
+                        // Hit! Player didn't dodge or dodged wrong
+                        takeDamage();
+                        createParticles(shipX, ship.y, '#ff6b6b', 30);
+                        obstacle.active = false;
+                    }
+                }
+            });
+        }
+
+        function takeDamage() {
+            health = Math.max(0, health - 20);
+            healthFill.style.width = (health / maxHealth * 100) + '%';
+            
+            // Lose points for taking damage
+            const penalty = 50 * level;
+            score = Math.max(0, score - penalty);
+            scoreDisplay.textContent = `Score: ${score}`;
+            showPointPopup(-penalty, 0);
+            
+            // Screen shake effect
+            canvas.style.animation = 'shake 0.5s';
+            setTimeout(() => {
+                canvas.style.animation = '';
+            }, 500);
+            
+            if (health <= 0) {
+                gameOver();
+            }
+        }
+        
+        function showPointPopup(points, xOffset) {
+            const popup = document.createElement('div');
+            popup.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 36px;
+                font-weight: bold;
+                color: ${points > 0 ? '#4ecdc4' : '#ff6b6b'};
+                text-shadow: 0 0 10px currentColor;
+                z-index: 50;
+                pointer-events: none;
+                animation: pointFloat 1s ease-out forwards;
+            `;
+            popup.textContent = `${points > 0 ? '+' : ''}${points}`;
+            
+            // Adjust position based on dodge direction
+            if (xOffset !== 0) {
+                popup.style.left = `calc(50% + ${xOffset}px)`;
+            }
+            
+            document.getElementById('gameContainer').appendChild(popup);
+            
+            setTimeout(() => {
+                popup.remove();
+            }, 1000);
+        }
+
+        function nextLevel() {
+            // Pause game during transition
+            levelTransitioning = true;
+            
+            // Clear any pending obstacle creation but not the main timer
+            if (pendingObstacleTimeout) {
+                clearTimeout(pendingObstacleTimeout);
+                pendingObstacleTimeout = null;
+            }
+            
+            // Clear any existing obstacles
+            obstacles = [];
+            
+            level++;
+            levelDisplay.textContent = `Level ${level}`;
+            levelProgress = 0;
+            
+            // Increase difficulty
+            obstacleInterval = Math.max(1000, obstacleInterval - 200); // Min 1000ms between obstacles
+            reactionTime = Math.max(400, reactionTime - 100); // Min 400ms reaction time
+            obstaclesPerLevel += 2;
+            
+            // Restore some health
+            health = Math.min(maxHealth, health + 30);
+            healthFill.style.width = (health / maxHealth * 100) + '%';
+            
+            // Clear screen celebration
+            createParticles(canvas.width / 2, canvas.height / 2, '#4ecdc4', 50);
+            
+            // Return ship to center during transition
+            ship.targetX = 0;
+            
+            // Announce new level
+            speak(`Level ${level}`);
+            
+            // Show big level announcement
+            const levelAnnouncement = document.createElement('div');
+            levelAnnouncement.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 72px;
+                font-weight: bold;
+                color: #4ecdc4;
+                text-shadow: 0 0 30px #4ecdc4, 0 0 60px #4ecdc4;
+                z-index: 100;
+                animation: levelPulse 2s ease-out forwards;
+                text-align: center;
+                white-space: nowrap;
+                width: 100%;
+            `;
+            levelAnnouncement.textContent = `LEVEL ${level}`;
+            document.getElementById('gameContainer').appendChild(levelAnnouncement);
+            
+            setTimeout(() => {
+                levelAnnouncement.remove();
+                // Resume game after transition
+                levelTransitioning = false;
+                // Don't restart timer here - it's already running
+            }, 2000);
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            finalScore.innerHTML = `You reached Level ${level}<br>Final Score: ${score}`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function startGame() {
+            gameRunning = true;
+            level = 1;
+            health = maxHealth;
+            score = 0;
+            levelProgress = 0;
+            obstacleInterval = 2000; // Start faster
+            reactionTime = 700; // Start with less reaction time
+            obstaclesPerLevel = 10;
+            obstacles = [];
+            particles = [];
+            ship.x = 0;
+            ship.targetX = 0;
+            
+            healthFill.style.width = '100%';
+            levelDisplay.textContent = 'Level 1';
+            scoreDisplay.textContent = 'Score: 0';
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            createStars();
+            gameLoop();
+            
+            // Start obstacle generation
+            setTimeout(() => {
+                obstacleTimer();
+            }, 2000);
+        }
+
+        function obstacleTimer() {
+            if (!gameRunning) return;
+            
+            // If transitioning, just reschedule without creating obstacle
+            if (levelTransitioning) {
+                setTimeout(() => {
+                    obstacleTimer();
+                }, obstacleInterval);
+                return;
+            }
+            
+            createObstacle();
+            
+            setTimeout(() => {
+                obstacleTimer();
+            }, obstacleInterval);
+        }
+
+        // Rendering
+        function drawShip() {
+            ctx.save();
+            ctx.translate(canvas.width / 2 + ship.x, ship.y);
+            
+            // Ship trail effect
+            ctx.globalAlpha = 0.3;
+            for (let i = 1; i <= 3; i++) {
+                ctx.fillStyle = '#4ecdc4';
+                ctx.beginPath();
+                ctx.moveTo(0, -25 + i * 10);
+                ctx.lineTo(-20 + i * 2, 25 + i * 5);
+                ctx.lineTo(20 - i * 2, 25 + i * 5);
+                ctx.closePath();
+                ctx.fill();
+            }
+            
+            ctx.globalAlpha = 1;
+            
+            // Ship body
+            ctx.fillStyle = '#4ecdc4';
+            ctx.beginPath();
+            ctx.moveTo(0, -25);
+            ctx.lineTo(-20, 25);
+            ctx.lineTo(20, 25);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Cockpit
+            ctx.fillStyle = '#2a9d8f';
+            ctx.beginPath();
+            ctx.moveTo(0, -10);
+            ctx.lineTo(-10, 5);
+            ctx.lineTo(10, 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Engine glow
+            const glowSize = 8 + Math.sin(Date.now() * 0.01) * 2;
+            ctx.fillStyle = '#ff6b6b';
+            ctx.globalAlpha = 0.7;
+            ctx.beginPath();
+            ctx.arc(-10, 30, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(10, 30, glowSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawObstacle(obstacle) {
+            ctx.save();
+            ctx.translate(obstacle.x, obstacle.y);
+            
+            // Add rotation for asteroid
+            if (!obstacle.rotation) obstacle.rotation = 0;
+            obstacle.rotation += 0.02;
+            ctx.rotate(obstacle.rotation);
+            
+            // Draw asteroid shape
+            ctx.fillStyle = '#8B7355';
+            ctx.strokeStyle = '#5C4033';
+            ctx.lineWidth = 3;
+            
+            // Create irregular asteroid shape
+            ctx.beginPath();
+            const points = 8;
+            for (let i = 0; i < points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const radius = 35 + Math.sin(i * 1.7 + obstacle.x) * 15; // Irregular shape based on position
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Add some crater details
+            ctx.fillStyle = '#6B5945';
+            ctx.beginPath();
+            ctx.arc(-10, -5, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(12, 8, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(-5, 15, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw warning arrow if coming from side
+            ctx.rotate(-obstacle.rotation); // Unrotate for arrow
+            if (obstacle.fromSide) {
+                ctx.fillStyle = '#ffff00';
+                ctx.shadowColor = '#ff0000';
+                ctx.shadowBlur = 10;
+                ctx.font = 'bold 28px Arial';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                const arrow = obstacle.fromSide === 'left' ? '→' : '←';
+                ctx.fillText(arrow, 0, -60);
+                ctx.shadowBlur = 0;
+            }
+            
+            // Add fire/glow effect for speed
+            ctx.rotate(obstacle.rotation); // Re-rotate for trail
+            const pulse = Math.sin(Date.now() * 0.01) * 0.3 + 0.7;
+            ctx.globalAlpha = pulse * 0.6;
+            ctx.fillStyle = '#ff6b6b';
+            ctx.beginPath();
+            ctx.arc(0, 40, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = pulse * 0.4;
+            ctx.fillStyle = '#ffaa00';
+            ctx.beginPath();
+            ctx.arc(0, 45, 30, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+
+        function drawStars() {
+            ctx.fillStyle = '#fff';
+            stars.forEach(star => {
+                ctx.globalAlpha = 0.5 + Math.sin(Date.now() * 0.001 + star.x) * 0.3;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = -10;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function drawParticles() {
+            particles.forEach((particle, index) => {
+                ctx.globalAlpha = particle.life;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x - 3, particle.y - 3, 6, 6);
+                
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.vy += 0.5; // gravity
+                particle.life -= 0.03;
+                
+                if (particle.life <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        function updateObstacles() {
+            let anyObstacleNearby = false;
+            const shipX = canvas.width / 2 + ship.x;
+            
+            obstacles.forEach((obstacle, index) => {
+                // Don't update obstacles during level transition
+                if (!levelTransitioning) {
+                    // Only move visible obstacles
+                    if (obstacle.visible) {
+                        // Check if player dodged wrong way and start tracking
+                        if (!obstacle.tracking && obstacle.y > -50 && !obstacle.dodged) {
+                            const shouldDodgeLeft = obstacle.fromSide === 'right';
+                            const shouldDodgeRight = obstacle.fromSide === 'left';
+                            const isDoingLeft = ship.x < -50;
+                            const isDoingRight = ship.x > 50;
+                            
+                            // Start tracking to wrong dodge position
+                            if ((shouldDodgeLeft && isDoingRight) || (shouldDodgeRight && isDoingLeft)) {
+                                obstacle.tracking = true;
+                                obstacle.targetX = shipX;
+                            }
+                        }
+                        
+                        // Move obstacle
+                        obstacle.y += obstacle.speed;
+                        
+                        // If tracking, move horizontally toward ship's position
+                        if (obstacle.tracking) {
+                            const dx = obstacle.targetX - obstacle.x;
+                            obstacle.x += dx * 0.1; // Smooth horizontal tracking
+                        }
+                    }
+                }
+                
+                // Check if any obstacle exists (even off-screen above) or is near the ship
+                if (obstacle.y < ship.y + 100) {
+                    anyObstacleNearby = true;
+                }
+                
+                // Remove off-screen obstacles
+                if (obstacle.y > canvas.height + 100) {
+                    obstacles.splice(index, 1);
+                }
+            });
+            
+            // Auto-return to center once all obstacles have passed
+            if (!anyObstacleNearby && Math.abs(ship.targetX) > 10 && !levelTransitioning) {
+                ship.targetX = 0;
+            }
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+            
+            ctx.fillStyle = '#0a0a0a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawStars();
+            drawParticles();
+            
+            // Update and draw obstacles
+            updateObstacles();
+            obstacles.forEach(obstacle => {
+                if (obstacle.visible) {
+                    drawObstacle(obstacle);
+                }
+            });
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Update ship position
+            ship.x += (ship.targetX - ship.x) * ship.speed;
+            drawShip();
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') {
+                dodge('left');
+            } else if (e.key === 'ArrowRight') {
+                dodge('right');
+            }
+        });
+
+        document.getElementById('leftBtn').addEventListener('click', () => dodge('left'));
+        document.getElementById('rightBtn').addEventListener('click', () => dodge('right'));
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        
+        // Mute button
+        document.getElementById('muteBtn').addEventListener('click', () => {
+            audioMuted = !audioMuted;
+            document.getElementById('muteBtn').textContent = audioMuted ? '🔇' : '🔊';
+        });
+        
+        // Touch/click areas for mobile - entire left/right side of screen
+        const gameContainer = document.getElementById('gameContainer');
+        gameContainer.addEventListener('click', (e) => {
+            // Don't process if clicking on buttons or UI elements
+            if (e.target.closest('button') || e.target.closest('#ui') || 
+                e.target.closest('#startScreen') || e.target.closest('#gameOverScreen')) {
+                return;
+            }
+            
+            // Only process during active gameplay
+            if (!gameRunning || levelTransitioning) return;
+            
+            // Determine if click was on left or right half of screen
+            const rect = gameContainer.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const containerMidpoint = rect.width / 2;
+            
+            if (clickX < containerMidpoint) {
+                dodge('left');
+            } else {
+                dodge('right');
+            }
+        });
+        
+        // Touch support for mobile
+        gameContainer.addEventListener('touchstart', (e) => {
+            // Don't process if touching buttons or UI elements
+            if (e.target.closest('button') || e.target.closest('#ui') || 
+                e.target.closest('#startScreen') || e.target.closest('#gameOverScreen')) {
+                return;
+            }
+            
+            // Only process during active gameplay
+            if (!gameRunning || levelTransitioning) return;
+            
+            // Prevent default to avoid any scroll/zoom behaviors
+            e.preventDefault();
+            
+            // Get touch position
+            const touch = e.touches[0];
+            const rect = gameContainer.getBoundingClientRect();
+            const touchX = touch.clientX - rect.left;
+            const containerMidpoint = rect.width / 2;
+            
+            if (touchX < containerMidpoint) {
+                dodge('left');
+            } else {
+                dodge('right');
+            }
+        }, { passive: false });
+
+        // Add shake and level animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+            
+            @keyframes levelPulse {
+                0% { 
+                    transform: translate(-50%, -50%) scale(0.5);
+                    opacity: 0;
+                }
+                50% {
+                    transform: translate(-50%, -50%) scale(1.2);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(-50%, -50%) scale(1);
+                    opacity: 0;
+                }
+            }
+            
+            @keyframes pointFloat {
+                0% {
+                    transform: translate(-50%, -50%);
+                    opacity: 1;
+                }
+                100% {
+                    transform: translate(-50%, -150%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        createStars();
+        ctx.fillStyle = '#0a0a0a';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawStars();
+    </script>
+</body>
+</html>
