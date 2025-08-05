@@ -225,10 +225,10 @@
                 const rotation = Math.random() * 360;
                 
                 // Adjust the starting position to account for current scroll
-                // const scrollX = window.scrollX || window.pageXOffset;
-                // const scrollY = window.scrollY || window.pageYOffset;
-                // const startX = mouseX - scrollX;
-                // const startY = mouseY - scrollY;
+                const scrollX = window.scrollX || window.pageXOffset;
+                const scrollY = window.scrollY || window.pageYOffset;
+                const startX = mouseX - scrollX;
+                const startY = mouseY - scrollY;
                 
                 piece.animate([
                     {
