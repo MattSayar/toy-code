@@ -149,14 +149,19 @@
     <div class="stats">
         <div>Streak: <span class="streak-count">0</span></div>
         <div>Best: <span class="high-score">0</span></div>
+        <div>Level: <span class="difficulty-level">Whole Hours</span></div>
     </div>
 
     <script>
         let correctAnswer = { hour: 12, minute: 0 };
         let streak = 0;
         let highScore = 0;
-        const STREAK_THRESHOLD = 3;
-        const QUARTER_HOURS = [0, 15, 30, 45];
+        const DIFFICULTY_LEVELS = {
+            EASY: { threshold: 0, minutes: [0], name: 'Whole Hours' },
+            MEDIUM: { threshold: 3, minutes: [0, 15, 30, 45], name: '15-Minute Increments' },
+            HARD: { threshold: 8, minutes: [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], name: '5-Minute Increments' }
+        };
+        let currentDifficulty = 'EASY';
 
         // Create clock numbers
         for (let i = 1; i <= 12; i++) {
@@ -191,14 +196,21 @@
             minuteHand.style.transform = `translateX(-50%) rotate(${minuteAngle}deg)`;
         }
 
+        function getDifficulty() {
+            if (streak >= DIFFICULTY_LEVELS.HARD.threshold) return 'HARD';
+            if (streak >= DIFFICULTY_LEVELS.MEDIUM.threshold) return 'MEDIUM';
+            return 'EASY';
+        }
+
         function generateOptions(correctHour, correctMinute) {
             let options = [{hour: correctHour, minute: correctMinute}];
-            
+            const difficulty = getDifficulty();
+            const availableMinutes = DIFFICULTY_LEVELS[difficulty].minutes;
+
             while (options.length < 3) {
                 let newHour = Math.floor(Math.random() * 12) + 1;
-                let newMinute = streak >= STREAK_THRESHOLD ? 
-                    QUARTER_HOURS[Math.floor(Math.random() * QUARTER_HOURS.length)] : 0;
-                
+                let newMinute = availableMinutes[Math.floor(Math.random() * availableMinutes.length)];
+
                 // Check if this combination is unique
                 if (!options.some(opt => opt.hour === newHour && opt.minute === newMinute)) {
                     options.push({hour: newHour, minute: newMinute});
@@ -214,6 +226,22 @@
         function updateStats() {
             document.querySelector('.streak-count').textContent = streak;
             document.querySelector('.high-score').textContent = highScore;
+            const difficulty = getDifficulty();
+            document.querySelector('.difficulty-level').textContent = DIFFICULTY_LEVELS[difficulty].name;
+        }
+
+        function updateDifficultyDisplay() {
+            const newDifficulty = getDifficulty();
+            if (newDifficulty !== currentDifficulty) {
+                currentDifficulty = newDifficulty;
+                const message = document.querySelector('.message');
+                message.textContent = `Level Up! ${DIFFICULTY_LEVELS[currentDifficulty].name}`;
+                setTimeout(() => {
+                    if (message.textContent.includes('Level Up')) {
+                        message.textContent = '';
+                    }
+                }, 2000);
+            }
         }
 
         function checkAnswer(element) {
@@ -233,11 +261,13 @@
                     highScore = streak;
                 }
                 updateStats();
+                updateDifficultyDisplay();
                 setTimeout(newGame, 1500);
             } else {
                 element.classList.add('incorrect');
                 message.textContent = 'Try again!';
                 streak = 0;
+                currentDifficulty = 'EASY';
                 updateStats();
             }
         }
@@ -248,10 +278,11 @@
                 clock.classList.remove('correct', 'incorrect');
             });
 
-            // Generate new time based on streak
+            // Generate new time based on current difficulty
+            const difficulty = getDifficulty();
+            const availableMinutes = DIFFICULTY_LEVELS[difficulty].minutes;
             correctAnswer.hour = Math.floor(Math.random() * 12) + 1;
-            correctAnswer.minute = streak >= STREAK_THRESHOLD ? 
-                QUARTER_HOURS[Math.floor(Math.random() * QUARTER_HOURS.length)] : 0;
+            correctAnswer.minute = availableMinutes[Math.floor(Math.random() * availableMinutes.length)];
             
             setClockHands(correctAnswer.hour, correctAnswer.minute);
             

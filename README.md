@@ -20,7 +20,7 @@ An interactive game for practicing number bonds and fact families using shapes a
 ### Clock Game
 [Play it now](https://code.mattsayar.com/clock-game.html)
 
-An interactive game to practice reading analog clocks with visual feedback and progressive difficulty.
+An interactive game to practice reading analog clocks with visual feedback and progressive difficulty. Starts with whole-hour times, advances to 15-minute increments at a 3-streak, and progresses to 5-minute increments at an 8-streak. Features level-up notifications and difficulty tracking to help students master time-telling skills.
 
 ### Numbers Practice
 [Play it now](https://code.mattsayar.com/numbers-practice.html)
