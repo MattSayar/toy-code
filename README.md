@@ -57,6 +57,11 @@ An enhanced version of the block counting game with adjustable settings. Student
 
 A fast-paced reaction game where players pilot a spaceship and dodge obstacles based on directional commands. Visual "LEFT" or "RIGHT" warnings appear, and players must quickly dodge to avoid incoming obstacles. Features adjustable audio (muted by default), increasing difficulty levels, and colorful space-themed graphics.
 
+### Asteroid Blitz
+[Play it now](https://code.mattsayar.com/left-right-spaceship-dodge-gemini3.html)
+
+A space survival game where players pilot a ship through an asteroid field. Dodge randomly spawning asteroids that increase in speed and frequency over time. Features smooth controls (keyboard or touch), particle effects, and progressive difficulty scaling.
+
 ## Sports Games
 
 ### NFL Division Quiz
