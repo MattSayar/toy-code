@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Place Value Slider</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        h1 {
+            color: #ffffff;
+            margin-bottom: 6px;
+            font-size: 1.6em;
+        }
+
+        .subtitle {
+            color: #9e9e9e;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .total-display {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: #ffffff;
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 2px;
+            min-height: 1.2em;
+        }
+
+        .total-display .digit {
+            display: inline-block;
+            transition: transform 0.3s, color 0.3s;
+        }
+
+        .total-display .digit.flash {
+            transform: scale(1.4);
+            color: #ffd740;
+        }
+
+        .total-expanded {
+            font-size: 1.1em;
+            color: #9e9e9e;
+            margin-bottom: 24px;
+            min-height: 1.5em;
+        }
+
+        .total-expanded span {
+            transition: color 0.3s;
+        }
+
+        .sliders-container {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+            width: 100%;
+            max-width: 750px;
+        }
+
+        .place-column {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #2d2d2d;
+            border-radius: 12px;
+            padding: 16px 12px;
+            min-width: 140px;
+            flex: 1;
+            max-width: 175px;
+        }
+
+        .place-label {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+
+        .place-worth {
+            font-size: 0.75em;
+            color: #757575;
+            margin-bottom: 10px;
+        }
+
+        .place-value-display {
+            font-size: 2.8em;
+            font-weight: bold;
+            margin-bottom: 8px;
+            width: 60px;
+            text-align: center;
+            transition: transform 0.2s, color 0.2s;
+        }
+
+        .place-value-display.flash {
+            transform: scale(1.3);
+        }
+
+        .slider-wrapper {
+            width: 100%;
+            padding: 0 4px;
+            margin-bottom: 12px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #fff;
+        }
+
+        .thousands-col .place-label { color: #e040fb; }
+        .thousands-col .place-value-display { color: #e040fb; }
+        .thousands-col input[type="range"] { background: linear-gradient(to right, #2d2d2d, #e040fb); }
+        .thousands-col input[type="range"]::-webkit-slider-thumb { background: #e040fb; }
+        .thousands-col input[type="range"]::-moz-range-thumb { background: #e040fb; }
+
+        .hundreds-col .place-label { color: #448aff; }
+        .hundreds-col .place-value-display { color: #448aff; }
+        .hundreds-col input[type="range"] { background: linear-gradient(to right, #2d2d2d, #448aff); }
+        .hundreds-col input[type="range"]::-webkit-slider-thumb { background: #448aff; }
+        .hundreds-col input[type="range"]::-moz-range-thumb { background: #448aff; }
+
+        .tens-col .place-label { color: #69f0ae; }
+        .tens-col .place-value-display { color: #69f0ae; }
+        .tens-col input[type="range"] { background: linear-gradient(to right, #2d2d2d, #69f0ae); }
+        .tens-col input[type="range"]::-webkit-slider-thumb { background: #69f0ae; }
+        .tens-col input[type="range"]::-moz-range-thumb { background: #69f0ae; }
+
+        .ones-col .place-label { color: #ffd740; }
+        .ones-col .place-value-display { color: #ffd740; }
+        .ones-col input[type="range"] { background: linear-gradient(to right, #2d2d2d, #ffd740); }
+        .ones-col input[type="range"]::-webkit-slider-thumb { background: #ffd740; }
+        .ones-col input[type="range"]::-moz-range-thumb { background: #ffd740; }
+
+        /* Block visualizations */
+        .blocks-area {
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            min-height: 40px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .unit-block {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            transition: opacity 0.2s;
+        }
+
+        .unit-block.thousands-block { background-color: #e040fb; }
+        .unit-block.hundreds-block { background-color: #448aff; }
+        .unit-block.tens-block { background-color: #69f0ae; }
+        .unit-block.ones-block { background-color: #ffd740; }
+
+        /* Plus one controls */
+        .controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            font-size: 1.1em;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            color: #fff;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(1px);
+        }
+
+        .btn-add {
+            background-color: #00c853;
+        }
+
+        .btn-add:hover {
+            background-color: #00e676;
+        }
+
+        .btn-subtract {
+            background-color: #ff5252;
+        }
+
+        .btn-subtract:hover {
+            background-color: #ff6e6e;
+        }
+
+        .btn-preset {
+            background-color: #3d5afe;
+            font-size: 0.9em;
+            padding: 8px 14px;
+        }
+
+        .btn-preset:hover {
+            background-color: #536dfe;
+        }
+
+        .btn-preset.active {
+            background-color: #00e5ff;
+            color: #000;
+        }
+
+        .btn-reset {
+            background-color: #616161;
+            font-size: 0.9em;
+            padding: 8px 14px;
+        }
+
+        .btn-reset:hover {
+            background-color: #757575;
+        }
+
+        .presets-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .presets-label {
+            color: #9e9e9e;
+            font-size: 0.85em;
+            margin-bottom: 6px;
+            text-align: center;
+        }
+
+        /* Carry animation */
+        .carry-message {
+            font-size: 1.1em;
+            color: #ffd740;
+            min-height: 1.6em;
+            margin-bottom: 16px;
+            text-align: center;
+            transition: opacity 0.3s;
+        }
+
+        .carry-message.visible {
+            opacity: 1;
+        }
+
+        .carry-message.hidden {
+            opacity: 0;
+        }
+
+        /* Magnitude comparison */
+        .magnitude-section {
+            width: 100%;
+            max-width: 750px;
+            background-color: #2d2d2d;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .magnitude-section h2 {
+            font-size: 1.1em;
+            color: #fff;
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .magnitude-bars {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .magnitude-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .magnitude-label {
+            min-width: 90px;
+            font-size: 0.85em;
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .magnitude-bar-track {
+            flex: 1;
+            height: 24px;
+            background-color: #1a1a1a;
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .magnitude-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.4s ease;
+            min-width: 2px;
+        }
+
+        .magnitude-bar-value {
+            min-width: 60px;
+            font-size: 0.9em;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .thousands-bar .magnitude-label { color: #e040fb; }
+        .thousands-bar .magnitude-bar-fill { background-color: #e040fb; }
+        .hundreds-bar .magnitude-label { color: #448aff; }
+        .hundreds-bar .magnitude-bar-fill { background-color: #448aff; }
+        .tens-bar .magnitude-label { color: #69f0ae; }
+        .tens-bar .magnitude-bar-fill { background-color: #69f0ae; }
+        .ones-bar .magnitude-label { color: #ffd740; }
+        .ones-bar .magnitude-bar-fill { background-color: #ffd740; }
+    </style>
+</head>
+<body>
+    <h1>Place Value Explorer</h1>
+    <p class="subtitle">Move the sliders to build numbers and see how each place works</p>
+
+    <div class="total-display" id="totalDisplay">0</div>
+    <div class="total-expanded" id="totalExpanded"></div>
+
+    <div class="carry-message hidden" id="carryMessage"></div>
+
+    <div class="sliders-container">
+        <div class="place-column thousands-col">
+            <div class="place-label">Thousands</div>
+            <div class="place-worth">worth 1,000 each</div>
+            <div class="place-value-display" id="thousandsValue">0</div>
+            <div class="slider-wrapper">
+                <input type="range" id="thousandsSlider" min="0" max="9" value="0" step="1">
+            </div>
+            <div class="blocks-area" id="thousandsBlocks"></div>
+        </div>
+
+        <div class="place-column hundreds-col">
+            <div class="place-label">Hundreds</div>
+            <div class="place-worth">worth 100 each</div>
+            <div class="place-value-display" id="hundredsValue">0</div>
+            <div class="slider-wrapper">
+                <input type="range" id="hundredsSlider" min="0" max="9" value="0" step="1">
+            </div>
+            <div class="blocks-area" id="hundredsBlocks"></div>
+        </div>
+
+        <div class="place-column tens-col">
+            <div class="place-label">Tens</div>
+            <div class="place-worth">worth 10 each</div>
+            <div class="place-value-display" id="tensValue">0</div>
+            <div class="slider-wrapper">
+                <input type="range" id="tensSlider" min="0" max="9" value="0" step="1">
+            </div>
+            <div class="blocks-area" id="tensBlocks"></div>
+        </div>
+
+        <div class="place-column ones-col">
+            <div class="place-label">Ones</div>
+            <div class="place-worth">worth 1 each</div>
+            <div class="place-value-display" id="onesValue">0</div>
+            <div class="slider-wrapper">
+                <input type="range" id="onesSlider" min="0" max="9" value="0" step="1">
+            </div>
+            <div class="blocks-area" id="onesBlocks"></div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <button class="btn btn-subtract" id="btnSubtract">- 1</button>
+        <button class="btn btn-add" id="btnAdd">+ 1</button>
+        <button class="btn btn-reset" id="btnReset">Reset to 0</button>
+    </div>
+
+    <div class="presets-label">Try these to see carrying in action:</div>
+    <div class="presets-row">
+        <button class="btn btn-preset" data-value="9">9</button>
+        <button class="btn btn-preset" data-value="99">99</button>
+        <button class="btn btn-preset" data-value="999">999</button>
+        <button class="btn btn-preset" data-value="9099">9,099</button>
+        <button class="btn btn-preset" data-value="9999">9,999</button>
+    </div>
+
+    <div class="magnitude-section">
+        <h2>How much is each place worth?</h2>
+        <div class="magnitude-bars">
+            <div class="magnitude-row thousands-bar">
+                <div class="magnitude-label">Thousands</div>
+                <div class="magnitude-bar-track">
+                    <div class="magnitude-bar-fill" id="thousandsBar"></div>
+                </div>
+                <div class="magnitude-bar-value" id="thousandsBarValue">0</div>
+            </div>
+            <div class="magnitude-row hundreds-bar">
+                <div class="magnitude-label">Hundreds</div>
+                <div class="magnitude-bar-track">
+                    <div class="magnitude-bar-fill" id="hundredsBar"></div>
+                </div>
+                <div class="magnitude-bar-value" id="hundredsBarValue">0</div>
+            </div>
+            <div class="magnitude-row tens-bar">
+                <div class="magnitude-label">Tens</div>
+                <div class="magnitude-bar-track">
+                    <div class="magnitude-bar-fill" id="tensBar"></div>
+                </div>
+                <div class="magnitude-bar-value" id="tensBarValue">0</div>
+            </div>
+            <div class="magnitude-row ones-bar">
+                <div class="magnitude-label">Ones</div>
+                <div class="magnitude-bar-track">
+                    <div class="magnitude-bar-fill" id="onesBar"></div>
+                </div>
+                <div class="magnitude-bar-value" id="onesBarValue">0</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const sliders = {
+            thousands: document.getElementById('thousandsSlider'),
+            hundreds: document.getElementById('hundredsSlider'),
+            tens: document.getElementById('tensSlider'),
+            ones: document.getElementById('onesSlider')
+        };
+
+        const displays = {
+            thousands: document.getElementById('thousandsValue'),
+            hundreds: document.getElementById('hundredsValue'),
+            tens: document.getElementById('tensValue'),
+            ones: document.getElementById('onesValue')
+        };
+
+        const blockAreas = {
+            thousands: document.getElementById('thousandsBlocks'),
+            hundreds: document.getElementById('hundredsBlocks'),
+            tens: document.getElementById('tensBlocks'),
+            ones: document.getElementById('onesBlocks')
+        };
+
+        const bars = {
+            thousands: document.getElementById('thousandsBar'),
+            hundreds: document.getElementById('hundredsBar'),
+            tens: document.getElementById('tensBar'),
+            ones: document.getElementById('onesBar')
+        };
+
+        const barValues = {
+            thousands: document.getElementById('thousandsBarValue'),
+            hundreds: document.getElementById('hundredsBarValue'),
+            tens: document.getElementById('tensBarValue'),
+            ones: document.getElementById('onesBarValue')
+        };
+
+        const totalDisplay = document.getElementById('totalDisplay');
+        const totalExpanded = document.getElementById('totalExpanded');
+        const carryMessage = document.getElementById('carryMessage');
+
+        const multipliers = {
+            thousands: 1000,
+            hundreds: 100,
+            tens: 10,
+            ones: 1
+        };
+
+        const blockClasses = {
+            thousands: 'thousands-block',
+            hundreds: 'hundreds-block',
+            tens: 'tens-block',
+            ones: 'ones-block'
+        };
+
+        let carryTimeout = null;
+
+        function getTotal() {
+            return parseInt(sliders.thousands.value) * 1000
+                 + parseInt(sliders.hundreds.value) * 100
+                 + parseInt(sliders.tens.value) * 10
+                 + parseInt(sliders.ones.value);
+        }
+
+        function formatNumber(n) {
+            return n.toLocaleString();
+        }
+
+        function updateBlocks(place) {
+            const count = parseInt(sliders[place].value);
+            const area = blockAreas[place];
+            area.innerHTML = '';
+            for (let i = 0; i < count; i++) {
+                const block = document.createElement('div');
+                block.className = 'unit-block ' + blockClasses[place];
+                area.appendChild(block);
+            }
+        }
+
+        function updateMagnitudeBars() {
+            const total = getTotal();
+            const maxVal = 9999;
+
+            const contributions = {
+                thousands: parseInt(sliders.thousands.value) * 1000,
+                hundreds: parseInt(sliders.hundreds.value) * 100,
+                tens: parseInt(sliders.tens.value) * 10,
+                ones: parseInt(sliders.ones.value)
+            };
+
+            for (const place of ['thousands', 'hundreds', 'tens', 'ones']) {
+                const pct = (contributions[place] / maxVal) * 100;
+                bars[place].style.width = pct + '%';
+                barValues[place].textContent = formatNumber(contributions[place]);
+            }
+        }
+
+        function buildExpandedForm() {
+            const th = parseInt(sliders.thousands.value);
+            const hu = parseInt(sliders.hundreds.value);
+            const te = parseInt(sliders.tens.value);
+            const on = parseInt(sliders.ones.value);
+
+            const parts = [];
+            if (th > 0) parts.push(`<span style="color:#e040fb">${th} x 1,000</span>`);
+            if (hu > 0) parts.push(`<span style="color:#448aff">${hu} x 100</span>`);
+            if (te > 0) parts.push(`<span style="color:#69f0ae">${te} x 10</span>`);
+            if (on > 0) parts.push(`<span style="color:#ffd740">${on} x 1</span>`);
+
+            return parts.length > 0 ? parts.join(' + ') : '';
+        }
+
+        function updateTotalDisplay() {
+            const total = getTotal();
+            const str = total.toLocaleString();
+
+            // Color each digit by its place
+            const raw = total.toString();
+            let html = '';
+            const colors = {
+                0: '#e040fb',  // thousands
+                1: '#448aff',  // hundreds
+                2: '#69f0ae',  // tens
+                3: '#ffd740'   // ones
+            };
+
+            const padded = raw.padStart(4, ' ');
+            for (let i = 0; i < padded.length; i++) {
+                const ch = padded[i];
+                if (ch === ' ') continue;
+                const placeIndex = i;
+                const color = colors[placeIndex] || '#fff';
+                html += `<span class="digit" style="color:${color}" data-place="${placeIndex}">${ch}</span>`;
+                // Add comma after thousands digit if number >= 1000
+                if (placeIndex === 0 && total >= 1000) {
+                    html += '<span class="digit" style="color:#666">,</span>';
+                }
+            }
+
+            totalDisplay.innerHTML = html;
+            totalExpanded.innerHTML = buildExpandedForm();
+        }
+
+        function updateAll() {
+            for (const place of ['thousands', 'hundreds', 'tens', 'ones']) {
+                displays[place].textContent = sliders[place].value;
+                updateBlocks(place);
+            }
+            updateTotalDisplay();
+            updateMagnitudeBars();
+        }
+
+        function flashPlace(place) {
+            const display = displays[place];
+            display.classList.add('flash');
+            setTimeout(() => display.classList.remove('flash'), 300);
+        }
+
+        function flashDigit(placeIndex) {
+            const digits = totalDisplay.querySelectorAll('.digit[data-place]');
+            digits.forEach(d => {
+                if (parseInt(d.dataset.place) === placeIndex) {
+                    d.classList.add('flash');
+                    setTimeout(() => d.classList.remove('flash'), 400);
+                }
+            });
+        }
+
+        function showCarryMessage(msg) {
+            if (carryTimeout) clearTimeout(carryTimeout);
+            carryMessage.textContent = msg;
+            carryMessage.classList.remove('hidden');
+            carryMessage.classList.add('visible');
+            carryTimeout = setTimeout(() => {
+                carryMessage.classList.remove('visible');
+                carryMessage.classList.add('hidden');
+            }, 3000);
+        }
+
+        function addOne() {
+            const total = getTotal();
+            if (total >= 9999) return;
+
+            const ones = parseInt(sliders.ones.value);
+            const tens = parseInt(sliders.tens.value);
+            const hundreds = parseInt(sliders.hundreds.value);
+            const thousands = parseInt(sliders.thousands.value);
+
+            const carries = [];
+
+            if (ones < 9) {
+                // Simple: just increment ones
+                sliders.ones.value = ones + 1;
+            } else {
+                // Ones overflows -> carry
+                sliders.ones.value = 0;
+                carries.push('ones roll over to 0');
+
+                if (tens < 9) {
+                    sliders.tens.value = tens + 1;
+                    carries.push('tens go up by 1');
+                } else {
+                    sliders.tens.value = 0;
+                    carries.push('tens roll over to 0');
+
+                    if (hundreds < 9) {
+                        sliders.hundreds.value = hundreds + 1;
+                        carries.push('hundreds go up by 1');
+                    } else {
+                        sliders.hundreds.value = 0;
+                        carries.push('hundreds roll over to 0');
+
+                        if (thousands < 9) {
+                            sliders.thousands.value = thousands + 1;
+                            carries.push('thousands go up by 1');
+                        }
+                    }
+                }
+            }
+
+            updateAll();
+
+            // Flash the places that changed
+            if (carries.length > 0) {
+                const carryText = 'Carry! ' + carries.join(', ');
+                showCarryMessage(carryText);
+                // Flash all affected places
+                for (const place of ['ones', 'tens', 'hundreds', 'thousands']) {
+                    flashPlace(place);
+                }
+            } else {
+                flashPlace('ones');
+            }
+        }
+
+        function subtractOne() {
+            const total = getTotal();
+            if (total <= 0) return;
+
+            const ones = parseInt(sliders.ones.value);
+            const tens = parseInt(sliders.tens.value);
+            const hundreds = parseInt(sliders.hundreds.value);
+            const thousands = parseInt(sliders.thousands.value);
+
+            const borrows = [];
+
+            if (ones > 0) {
+                sliders.ones.value = ones - 1;
+            } else {
+                // Need to borrow
+                sliders.ones.value = 9;
+                borrows.push('ones become 9');
+
+                if (tens > 0) {
+                    sliders.tens.value = tens - 1;
+                    borrows.push('tens go down by 1');
+                } else {
+                    sliders.tens.value = 9;
+                    borrows.push('tens become 9');
+
+                    if (hundreds > 0) {
+                        sliders.hundreds.value = hundreds - 1;
+                        borrows.push('hundreds go down by 1');
+                    } else {
+                        sliders.hundreds.value = 9;
+                        borrows.push('hundreds become 9');
+
+                        if (thousands > 0) {
+                            sliders.thousands.value = thousands - 1;
+                            borrows.push('thousands go down by 1');
+                        }
+                    }
+                }
+            }
+
+            updateAll();
+
+            if (borrows.length > 0) {
+                const borrowText = 'Borrow! ' + borrows.join(', ');
+                showCarryMessage(borrowText);
+                for (const place of ['ones', 'tens', 'hundreds', 'thousands']) {
+                    flashPlace(place);
+                }
+            } else {
+                flashPlace('ones');
+            }
+        }
+
+        function setNumber(n) {
+            const thousands = Math.floor(n / 1000);
+            const hundreds = Math.floor((n % 1000) / 100);
+            const tens = Math.floor((n % 100) / 10);
+            const ones = n % 10;
+
+            sliders.thousands.value = thousands;
+            sliders.hundreds.value = hundreds;
+            sliders.tens.value = tens;
+            sliders.ones.value = ones;
+
+            updateAll();
+        }
+
+        // Slider event listeners
+        for (const place of ['thousands', 'hundreds', 'tens', 'ones']) {
+            sliders[place].addEventListener('input', () => {
+                updateAll();
+                flashPlace(place);
+            });
+        }
+
+        // Button listeners
+        document.getElementById('btnAdd').addEventListener('click', addOne);
+        document.getElementById('btnSubtract').addEventListener('click', subtractOne);
+        document.getElementById('btnReset').addEventListener('click', () => setNumber(0));
+
+        // Preset buttons
+        document.querySelectorAll('.btn-preset').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const val = parseInt(btn.dataset.value);
+                setNumber(val);
+                // Briefly highlight the active preset
+                document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                setTimeout(() => btn.classList.remove('active'), 600);
+            });
+        });
+
+        // Keyboard support: arrow keys for +/- 1
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                addOne();
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                subtractOne();
+            }
+        });
+
+        // Initialize
+        updateAll();
+    </script>
+</body>
+</html>
