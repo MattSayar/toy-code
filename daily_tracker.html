@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Daily Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    :root {
+      --bg: #07091a;
+      --surface: #0d1228;
+      --surface2: #111830;
+      --border: #1a2442;
+      --text: #dde4f5;
+      --text-muted: #4d6080;
+      --accent: #00d4ff;
+      --accent2: #7c5af6;
+      --success: #00e896;
+      --danger: #ff4d6d;
+      --warn: #ffb520;
+      --radius: 14px;
+      --shadow: 0 2px 8px rgba(0,0,0,0.5), 0 1px 3px rgba(0,0,0,0.4);
+      --shadow-md: 0 8px 28px rgba(0,0,0,0.6);
+    }
+
+    html, body {
+      height: 100%;
+    }
+
+    body {
+      font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: 32px;
+    }
+
+    /* ── Header ── */
+    .header {
+      background: var(--surface);
+      padding: 18px 20px 14px;
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+
+    .header-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 400;
+      letter-spacing: 4px;
+      background: linear-gradient(120deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ── Tabs ── */
+    .tab-bar {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: 57px;
+      z-index: 99;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 13px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+    }
+
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    /* ── Date navigation ── */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .date-btn {
+      background: none;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+      flex-shrink: 0;
+    }
+
+    .date-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .date-btn:active { transform: scale(0.88); background: var(--surface2); }
+    .date-btn:disabled { opacity: 0.2; cursor: default; }
+
+    .date-center {
+      flex: 1;
+      text-align: center;
+      padding: 0 10px;
+    }
+
+    .date-weekday {
+      font-size: 0.63rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    .date-main {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-top: 2px;
+      color: var(--text);
+    }
+
+    .today-badge {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.58rem;
+      background: var(--accent);
+      color: #07091a;
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+
+    .goto-today-btn {
+      display: inline-block;
+      margin-top: 4px;
+      font-size: 0.58rem;
+      background: none;
+      border: 1.5px solid var(--accent);
+      color: var(--accent);
+      padding: 2px 9px;
+      border-radius: 20px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .goto-today-btn:active { background: rgba(0,212,255,0.12); }
+
+    /* ── Progress ── */
+    .progress-wrap {
+      margin: 12px 16px 0;
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .progress-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+
+    .progress-label {
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      font-weight: 500;
+      letter-spacing: 0.3px;
+    }
+
+    .progress-pct {
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .progress-track {
+      height: 6px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 6px;
+      width: 0%;
+      transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                  background 0.4s ease;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+    }
+
+    /* ── Task list ── */
+    .task-list {
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+    }
+
+    .task-card {
+      border-radius: var(--radius);
+      overflow: hidden;
+      cursor: pointer;
+      display: flex;
+      align-items: stretch;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      transition: transform 0.12s, box-shadow 0.12s;
+      -webkit-user-select: none;
+      user-select: none;
+      min-height: 52px;
+    }
+
+    .task-card:active {
+      transform: scale(0.968);
+      box-shadow: none;
+    }
+
+    .task-card.done {
+      opacity: 0.55;
+    }
+
+    .task-stripe {
+      width: 4px;
+      flex-shrink: 0;
+    }
+
+    .task-body {
+      flex: 1;
+      padding: 11px 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .task-icon {
+      font-size: 1.15rem;
+      line-height: 1;
+      flex-shrink: 0;
+      width: 24px;
+      text-align: center;
+    }
+
+    .task-text {
+      flex: 1;
+    }
+
+    .task-name {
+      font-size: 0.87rem;
+      line-height: 1.35;
+      font-weight: 500;
+    }
+
+    .task-name.bold { font-weight: 800; }
+
+    .task-sub {
+      font-size: 0.68rem;
+      margin-top: 2px;
+      opacity: 0.45;
+    }
+
+    .task-check {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      border: 1.5px solid rgba(255,255,255,0.15);
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.22s, border-color 0.22s, transform 0.15s;
+    }
+
+    .task-check .ck {
+      color: #07091a;
+      font-size: 12px;
+      font-weight: 900;
+      opacity: 0;
+      transform: scale(0.4) rotate(-10deg);
+      transition: opacity 0.18s, transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .task-card.done .task-check {
+      background: var(--success);
+      border-color: var(--success);
+      transform: scale(1.05);
+    }
+
+    .task-card.done .task-check .ck {
+      opacity: 1;
+      transform: scale(1) rotate(0deg);
+    }
+
+    /* ── Month view ── */
+    .month-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .month-btn {
+      background: none;
+      border: 1.5px solid var(--border);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, border-color 0.15s, color 0.15s, transform 0.1s;
+    }
+
+    .month-btn:hover { border-color: var(--accent); color: var(--accent); }
+    .month-btn:active { transform: scale(0.88); background: var(--surface2); }
+    .month-btn:disabled { opacity: 0.2; cursor: default; }
+
+    .month-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ── Stats row ── */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px 16px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border-radius: 11px;
+      padding: 10px 6px;
+      text-align: center;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    .stat-val {
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .stat-lbl {
+      font-size: 0.54rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Calendar ── */
+    .cal-wrap {
+      padding: 0 16px 20px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+
+    .cal-head {
+      text-align: center;
+      font-size: 0.57rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 5px 0 8px;
+    }
+
+    .cal-day {
+      aspect-ratio: 1;
+      border-radius: 9px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.1s;
+      gap: 2px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .cal-day:active { transform: scale(0.85); }
+    .cal-day.empty { background: transparent; border-color: transparent; cursor: default; }
+    .cal-day.future { opacity: 0.2; cursor: default; }
+    .cal-day.is-today { box-shadow: 0 0 0 2px var(--accent); border-color: var(--accent); }
+
+    .cal-day-num {
+      font-size: 0.75rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--text);
+    }
+
+    .cal-pip {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+    }
+
+    /* ── Celebration ── */
+    .celebration {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    .cel-emoji {
+      font-size: 4rem;
+      animation: popIn 1.8s ease-out forwards;
+    }
+
+    .cel-text {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 2rem;
+      font-weight: 400;
+      letter-spacing: 4px;
+      color: var(--accent);
+      background: var(--surface);
+      padding: 8px 24px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-md), 0 0 40px rgba(0,212,255,0.2);
+      animation: popIn 1.8s ease-out 0.1s both;
+    }
+
+    @keyframes popIn {
+      0%   { opacity: 0; transform: scale(0.4) translateY(30px); }
+      25%  { opacity: 1; transform: scale(1.15) translateY(-8px); }
+      60%  { opacity: 1; transform: scale(1) translateY(-8px); }
+      100% { opacity: 0; transform: scale(0.9) translateY(-40px); }
+    }
+
+    /* confetti pieces */
+    .confetti-piece {
+      position: fixed;
+      top: -10px;
+      width: 8px;
+      height: 12px;
+      border-radius: 2px;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 998;
+      animation: fall 1.8s ease-in forwards;
+    }
+
+    @keyframes fall {
+      0%   { opacity: 1; transform: translateY(0) rotate(0deg); }
+      100% { opacity: 0; transform: translateY(100vh) rotate(720deg); }
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">⚡ Badassity Tracker</div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" id="tabToday">Today</div>
+  <div class="tab" id="tabMonth">Month</div>
+</div>
+
+<!-- TODAY VIEW -->
+<div id="viewToday">
+  <div class="date-nav">
+    <button class="date-btn" id="prevDay" aria-label="Previous day">&#8249;</button>
+    <div class="date-center">
+      <div class="date-weekday" id="dateWeekday"></div>
+      <div class="date-main" id="dateMain"></div>
+      <div id="dateBadgeWrap"></div>
+    </div>
+    <button class="date-btn" id="nextDay" aria-label="Next day">&#8250;</button>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-top">
+      <span class="progress-label" id="progressLabel">0 of 13 tasks</span>
+      <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+    <div class="progress-track">
+      <div class="progress-fill" id="progressFill"></div>
+    </div>
+  </div>
+
+  <div class="task-list" id="taskList"></div>
+</div>
+
+<!-- MONTH VIEW -->
+<div id="viewMonth" class="hidden">
+  <div class="month-nav">
+    <button class="month-btn" id="prevMonth" aria-label="Previous month">&#8249;</button>
+    <span class="month-title" id="monthTitle"></span>
+    <button class="month-btn" id="nextMonth" aria-label="Next month">&#8250;</button>
+  </div>
+  <div class="stats-row" id="statsRow"></div>
+  <div class="cal-wrap">
+    <div class="cal-grid" id="calGrid"></div>
+  </div>
+</div>
+
+<!-- Celebration overlay -->
+<div class="celebration hidden" id="celebration">
+  <div class="cel-emoji" id="celEmoji"></div>
+  <div class="cel-text" id="celText"></div>
+</div>
+
+<script>
+// ── Task definitions ──────────────────────────────────────────────────────────
+const TASKS = [
+  { name: "Skies before screens",                icon: "☀️",  color: "#181305", text: "#fcd34d", bold: false, sub: "look at something besides my phone first" },
+  { name: "Appreciate my family",                icon: "👪",  color: "#051719", text: "#22d3ee", bold: false },
+  { name: "Create a solid plan for the day",     icon: "📓",  color: "#0d1120", text: "#94a3b8", bold: false, sub: "thoughts, gratitudes & plans" },
+  { name: "Lunchtime Walk or Exercise",          icon: "🚶",  color: "#051719", text: "#22d3ee", bold: false },
+  { name: "Meet my macro goals for the day",     icon: "🥗",  color: "#071510", text: "#4ade80", bold: false },
+  { name: "Alcohol Free Day",                    icon: "🍃",  color: "#071510", text: "#4ade80", bold: false },
+  { name: "Appreciate the Sunset",               icon: "🌅",  color: "#190d05", text: "#fb923c", bold: false },
+  { name: "No scrolling devices after 8 PM",     icon: "🌙",  color: "#051018", text: "#60a5fa", bold: false },
+  { name: "Read before sleep",                   icon: "📚",  color: "#0a0619", text: "#c4b5fd", bold: false },
+];
+
+const N = TASKS.length;
+
+// ── Date helpers ──────────────────────────────────────────────────────────────
+function toStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function fromStr(s) {
+  const [y,m,d] = s.split('-').map(Number);
+  return new Date(y, m-1, d);
+}
+
+function addDays(s, n) {
+  const d = fromStr(s);
+  d.setDate(d.getDate() + n);
+  return toStr(d);
+}
+
+function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+function firstWeekday(y, m) { return new Date(y, m, 1).getDay(); }
+function monthLabel(y, m) {
+  return new Date(y, m, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+const STORE_KEY = 'badassity_v1';
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); }
+  catch { return {}; }
+}
+
+function save(data) {
+  localStorage.setItem(STORE_KEY, JSON.stringify(data));
+}
+
+function dayArr(dateStr) {
+  const data = load();
+  const arr = data[dateStr] || [];
+  while (arr.length < N) arr.push(false);
+  return arr;
+}
+
+function toggleTask(dateStr, i) {
+  const data = load();
+  if (!data[dateStr]) data[dateStr] = new Array(N).fill(false);
+  while (data[dateStr].length < N) data[dateStr].push(false);
+  data[dateStr][i] = !data[dateStr][i];
+  save(data);
+}
+
+function countDone(dateStr) { return dayArr(dateStr).filter(Boolean).length; }
+function pct(dateStr) { return countDone(dateStr) / N; }
+
+// ── Color helpers ─────────────────────────────────────────────────────────────
+function stripeColor(hex) {
+  if (!hex.startsWith('#') || hex.length < 7) return hex;
+  const r = parseInt(hex.slice(1,3), 16);
+  const g = parseInt(hex.slice(3,5), 16);
+  const b = parseInt(hex.slice(5,7), 16);
+  const lum = (0.299*r + 0.587*g + 0.114*b) / 255;
+  const d = lum > 0.5 ? -80 : 90;
+  return `rgb(${clamp(r+d)},${clamp(g+d)},${clamp(b+d)})`;
+}
+function clamp(v) { return Math.max(0, Math.min(255, Math.round(v))); }
+
+function completionColor(p) {
+  if (p <= 0)   return '#1a2442';
+  if (p < 0.35) return '#f87171';
+  if (p < 0.6)  return '#fb923c';
+  if (p < 0.85) return '#60a5fa';
+  return '#00e896';
+}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+const NOW        = new Date();
+const TODAY_STR  = toStr(NOW);
+let selectedDate = TODAY_STR;
+let viewYear     = NOW.getFullYear();
+let viewMonth    = NOW.getMonth();
+let currentTab   = 'today';
+
+// ── Render: Today tab ─────────────────────────────────────────────────────────
+function renderTodayView() {
+  renderDateNav();
+  renderTasks();
+  renderProgress();
+}
+
+function renderDateNav() {
+  const d = fromStr(selectedDate);
+  const isToday = selectedDate === TODAY_STR;
+
+  document.getElementById('dateWeekday').textContent =
+    d.toLocaleDateString('en-US', { weekday: 'long' });
+  document.getElementById('dateMain').textContent =
+    d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+
+  const wrap = document.getElementById('dateBadgeWrap');
+  wrap.innerHTML = '';
+  if (isToday) {
+    const b = document.createElement('span');
+    b.className = 'today-badge';
+    b.textContent = 'Today';
+    wrap.appendChild(b);
+  } else {
+    const b = document.createElement('button');
+    b.className = 'goto-today-btn';
+    b.textContent = '← Back to Today';
+    b.addEventListener('click', () => {
+      selectedDate = TODAY_STR;
+      renderTodayView();
+    });
+    wrap.appendChild(b);
+  }
+
+  document.getElementById('nextDay').disabled = selectedDate >= TODAY_STR;
+}
+
+function renderTasks() {
+  const list = document.getElementById('taskList');
+  const arr = dayArr(selectedDate);
+  list.innerHTML = '';
+
+  TASKS.forEach((task, i) => {
+    const done = arr[i];
+
+    const card = document.createElement('div');
+    card.className = `task-card${done ? ' done' : ''}`;
+    card.style.background = task.color;
+    card.setAttribute('role', 'checkbox');
+    card.setAttribute('aria-checked', done ? 'true' : 'false');
+    card.setAttribute('tabindex', '0');
+
+    const stripe = document.createElement('div');
+    stripe.className = 'task-stripe';
+    stripe.style.background = stripeColor(task.color);
+
+    const body = document.createElement('div');
+    body.className = 'task-body';
+
+    const icon = document.createElement('div');
+    icon.className = 'task-icon';
+    icon.textContent = task.icon;
+
+    const textDiv = document.createElement('div');
+    textDiv.className = 'task-text';
+
+    const name = document.createElement('div');
+    name.className = `task-name${task.bold ? ' bold' : ''}`;
+    name.style.color = task.text;
+    name.textContent = task.name;
+    textDiv.appendChild(name);
+
+    if (task.sub) {
+      const sub = document.createElement('div');
+      sub.className = 'task-sub';
+      sub.style.color = task.text;
+      sub.textContent = task.sub;
+      textDiv.appendChild(sub);
+    }
+
+    const check = document.createElement('div');
+    check.className = 'task-check';
+    const ck = document.createElement('span');
+    ck.className = 'ck';
+    ck.textContent = '✓';
+    check.appendChild(ck);
+
+    body.appendChild(icon);
+    body.appendChild(textDiv);
+    body.appendChild(check);
+    card.appendChild(stripe);
+    card.appendChild(body);
+
+    const toggle = () => {
+      const prevCount = countDone(selectedDate);
+      toggleTask(selectedDate, i);
+      const newCount = countDone(selectedDate);
+      renderTasks();
+      renderProgress();
+      if (newCount === N && prevCount < N) celebrate();
+    };
+
+    card.addEventListener('click', toggle);
+    card.addEventListener('keydown', e => {
+      if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); toggle(); }
+    });
+
+    list.appendChild(card);
+  });
+}
+
+function renderProgress() {
+  const count = countDone(selectedDate);
+  const p = count / N;
+  const pctInt = Math.round(p * 100);
+
+  document.getElementById('progressLabel').textContent = `${count} of ${N} tasks`;
+  document.getElementById('progressPct').textContent = `${pctInt}%`;
+
+  const fill = document.getElementById('progressFill');
+  fill.style.width = `${pctInt}%`;
+
+  if (p <= 0)      fill.style.background = 'linear-gradient(90deg,#1a2442,#1e2d4a)';
+  else if (p < .4) fill.style.background = 'linear-gradient(90deg,#f87171,#fb923c)';
+  else if (p < .7) fill.style.background = 'linear-gradient(90deg,#fb923c,#fbbf24)';
+  else if (p < 1)  fill.style.background = 'linear-gradient(90deg,#00d4ff,#7c5af6)';
+  else             fill.style.background = 'linear-gradient(90deg,#00e896,#00d4ff)';
+}
+
+// ── Render: Month tab ─────────────────────────────────────────────────────────
+function renderMonthView() {
+  document.getElementById('monthTitle').textContent = monthLabel(viewYear, viewMonth);
+  renderStats();
+  renderCalendar();
+  updateMonthBtns();
+}
+
+function updateMonthBtns() {
+  const nextBtn = document.getElementById('nextMonth');
+  nextBtn.disabled = (viewYear > NOW.getFullYear()) ||
+    (viewYear === NOW.getFullYear() && viewMonth >= NOW.getMonth());
+}
+
+function renderStats() {
+  const row = document.getElementById('statsRow');
+  row.innerHTML = '';
+
+  const dim = daysInMonth(viewYear, viewMonth);
+  const todayDate = fromStr(TODAY_STR);
+  let dayCount = 0, totalPct = 0, perfect = 0;
+
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    if (fromStr(ds) > todayDate) break;
+    dayCount++;
+    const p = pct(ds);
+    totalPct += p;
+    if (p === 1) perfect++;
+  }
+
+  const avgPct = dayCount ? Math.round(totalPct / dayCount * 100) : 0;
+  const streak = calcStreak();
+  const best   = calcBestStreak();
+
+  [
+    { v: streak + (streak > 0 ? '🔥' : ''), l: 'Streak' },
+    { v: avgPct + '%',                       l: 'Month Avg' },
+    { v: perfect,                             l: 'Perfect' },
+    { v: best,                                l: 'Best Streak' },
+  ].forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `<div class="stat-val">${s.v}</div><div class="stat-lbl">${s.l}</div>`;
+    row.appendChild(card);
+  });
+}
+
+function calcStreak() {
+  let streak = 0;
+  const d = fromStr(TODAY_STR);
+  for (let i = 0; i < 365; i++) {
+    const ds = toStr(d);
+    if (pct(ds) >= 0.5) streak++;
+    else break;
+    d.setDate(d.getDate() - 1);
+  }
+  return streak;
+}
+
+function calcBestStreak() {
+  const data = load();
+  const keys = Object.keys(data).sort();
+  let best = 0, cur = 0, prev = null;
+  for (const k of keys) {
+    if (pct(k) >= 0.5) {
+      if (prev) {
+        const gap = (fromStr(k) - fromStr(prev)) / 86400000;
+        cur = gap === 1 ? cur + 1 : 1;
+      } else { cur = 1; }
+      best = Math.max(best, cur);
+      prev = k;
+    } else { cur = 0; prev = null; }
+  }
+  return best;
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  const todayDate = fromStr(TODAY_STR);
+
+  ['Su','Mo','Tu','We','Th','Fr','Sa'].forEach(h => {
+    const el = document.createElement('div');
+    el.className = 'cal-head';
+    el.textContent = h;
+    grid.appendChild(el);
+  });
+
+  const offset = firstWeekday(viewYear, viewMonth);
+  for (let i = 0; i < offset; i++) {
+    const e = document.createElement('div');
+    e.className = 'cal-day empty';
+    grid.appendChild(e);
+  }
+
+  const dim = daysInMonth(viewYear, viewMonth);
+  for (let d = 1; d <= dim; d++) {
+    const ds = `${viewYear}-${String(viewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cellDate = fromStr(ds);
+    const isFuture = cellDate > todayDate;
+    const isToday  = ds === TODAY_STR;
+    const p = pct(ds);
+    const col = completionColor(p);
+
+    const cell = document.createElement('div');
+    cell.className = `cal-day${isFuture ? ' future' : ''}${isToday ? ' is-today' : ''}`;
+    cell.style.background = isFuture
+      ? 'var(--surface)'
+      : (p > 0 ? col + '35' : 'var(--surface)');
+
+    const num = document.createElement('div');
+    num.className = 'cal-day-num';
+    num.textContent = d;
+    cell.appendChild(num);
+
+    if (!isFuture) {
+      const pip = document.createElement('div');
+      pip.className = 'cal-pip';
+      pip.style.background = p > 0 ? col : '#1a2442';
+      cell.appendChild(pip);
+    }
+
+    if (!isFuture) {
+      cell.addEventListener('click', () => {
+        selectedDate = ds;
+        switchTab('today');
+        renderTodayView();
+      });
+    }
+
+    grid.appendChild(cell);
+  }
+}
+
+// ── Celebration ───────────────────────────────────────────────────────────────
+function celebrate() {
+  const emojis = ['🎉','🔥','⚡','🏆','💪','🌟','🎊','✨'];
+  const words   = ['BADASS!','CRUSHED IT!','LEGEND!','BEAST MODE!','FLAWLESS!'];
+  const emoji   = emojis[Math.floor(Math.random() * emojis.length)];
+  const word    = words[Math.floor(Math.random() * words.length)];
+
+  const cel = document.getElementById('celebration');
+  document.getElementById('celEmoji').textContent = emoji;
+  document.getElementById('celText').textContent  = word;
+  cel.classList.remove('hidden');
+
+  // Confetti
+  const colors = ['#00d4ff','#00e896','#ffb520','#ff4d6d','#7c5af6','#22d3ee','#fb923c'];
+  for (let i = 0; i < 30; i++) {
+    const piece = document.createElement('div');
+    piece.className = 'confetti-piece';
+    piece.style.left       = Math.random() * 100 + 'vw';
+    piece.style.background = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDelay    = Math.random() * 0.6 + 's';
+    piece.style.animationDuration = (1.2 + Math.random() * 0.8) + 's';
+    piece.style.transform  = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(piece);
+    setTimeout(() => piece.remove(), 2500);
+  }
+
+  setTimeout(() => cel.classList.add('hidden'), 1900);
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────────────
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tabToday').classList.toggle('active', tab === 'today');
+  document.getElementById('tabMonth').classList.toggle('active', tab === 'month');
+  document.getElementById('viewToday').classList.toggle('hidden', tab !== 'today');
+  document.getElementById('viewMonth').classList.toggle('hidden', tab !== 'month');
+  if (tab === 'month') renderMonthView();
+}
+
+// ── Event listeners ───────────────────────────────────────────────────────────
+document.getElementById('tabToday').addEventListener('click', () => switchTab('today'));
+document.getElementById('tabMonth').addEventListener('click', () => switchTab('month'));
+
+document.getElementById('prevDay').addEventListener('click', () => {
+  selectedDate = addDays(selectedDate, -1);
+  renderTodayView();
+});
+
+document.getElementById('nextDay').addEventListener('click', () => {
+  if (selectedDate >= TODAY_STR) return;
+  selectedDate = addDays(selectedDate, 1);
+  renderTodayView();
+});
+
+document.getElementById('prevMonth').addEventListener('click', () => {
+  viewMonth--;
+  if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+  renderMonthView();
+});
+
+document.getElementById('nextMonth').addEventListener('click', () => {
+  if (document.getElementById('nextMonth').disabled) return;
+  viewMonth++;
+  if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+  renderMonthView();
+});
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+renderTodayView();
+</script>
+</body>
+</html>

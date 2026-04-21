@@ -85,6 +85,11 @@ An intuitive BMI calculator tool using a "new BMI" calculation.
 
 ## Utility Tools
 
+### Daily Tracker
+[Track it now](https://code.mattsayar.com/daily_tracker.html)
+
+A habit and daily task tracker with a sleek, dark-themed interface. Track up to 9 customizable daily tasks including morning routines, exercise, nutrition goals, and evening wind-down activities. Features progress tracking, monthly calendar view with completion visualization, streak tracking, and celebratory animations when you complete all tasks for the day.
+
 ### Bus Route Planner
 [Play it now](https://code.mattsayar.com/bus-route-planner.html)
 
