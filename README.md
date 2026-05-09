@@ -101,3 +101,8 @@ A web-based tool for optimizing school bus routes. Upload a CSV file with stop a
 [Try it now](https://code.mattsayar.com/partial-json-prettyprint.html)
 
 An interactive tool for formatting and syntax-highlighting incomplete or truncated JSON data.
+
+### Article URL Enricher
+[Try it now](https://code.mattsayar.com/article-url-enricher.html)
+
+Wraps an Armorcode support article URL with a Zendesk SSO redirect so basic users can read it while logged in. Choose a subdomain, paste the article link, and the enriched URL is auto-copied to your clipboard.
