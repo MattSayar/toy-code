@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Article URL Enricher</title>
+  <style>
+    :root {
+      --primary-color: #6272a4;
+      --accent-color: #50fa7b;
+      --secondary-color: #8be9fd;
+      --background-color: #1e1e2e;
+      --card-background: #2a2a3c;
+      --input-background: #1e1e2e;
+      --text-color: #f8f8f2;
+      --muted-text: #a0a0b8;
+      --border-color: #444456;
+      --success-color: #50fa7b;
+      --error-color: #ff5555;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      line-height: 1.6;
+      color: var(--text-color);
+      background-color: var(--background-color);
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: var(--secondary-color);
+      margin-bottom: 8px;
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      color: var(--muted-text);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+
+    .container {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .card {
+      background: var(--card-background);
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      padding: 20px;
+    }
+
+    label {
+      display: block;
+      color: var(--primary-color);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    .subdomain-row {
+      display: flex;
+      align-items: stretch;
+      background: var(--input-background);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      transition: border-color 0.2s ease;
+    }
+
+    .subdomain-row:focus-within {
+      border-color: var(--secondary-color);
+    }
+
+    .subdomain-row input {
+      flex: 0 1 auto;
+      width: 140px;
+      background: transparent;
+      border: none;
+      color: var(--accent-color);
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 1rem;
+      padding: 12px 10px;
+      text-align: right;
+      outline: none;
+    }
+
+    .subdomain-row .suffix {
+      display: flex;
+      align-items: center;
+      padding: 12px 12px 12px 0;
+      color: var(--muted-text);
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 1rem;
+      white-space: nowrap;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .preset-btn {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--muted-text);
+      padding: 4px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      font-family: 'Menlo', 'Consolas', monospace;
+    }
+
+    .preset-btn:hover {
+      border-color: var(--secondary-color);
+      color: var(--secondary-color);
+    }
+
+    .preset-btn.active {
+      background: var(--secondary-color);
+      color: var(--background-color);
+      border-color: var(--secondary-color);
+    }
+
+    .url-input {
+      width: 100%;
+      background: var(--input-background);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-color);
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.95rem;
+      padding: 12px;
+      outline: none;
+      transition: border-color 0.2s ease;
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .url-input:focus {
+      border-color: var(--secondary-color);
+    }
+
+    .url-input::placeholder {
+      color: var(--muted-text);
+    }
+
+    .output-card {
+      position: relative;
+    }
+
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .output-label {
+      margin-bottom: 0;
+    }
+
+    .output-box {
+      background: var(--input-background);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 14px 50px 14px 14px;
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.9rem;
+      word-break: break-all;
+      color: var(--accent-color);
+      min-height: 56px;
+      position: relative;
+      cursor: pointer;
+      transition: border-color 0.2s ease;
+    }
+
+    .output-box:hover {
+      border-color: var(--secondary-color);
+    }
+
+    .output-box.empty {
+      color: var(--muted-text);
+      font-style: italic;
+    }
+
+    .output-box a {
+      color: var(--accent-color);
+      text-decoration: none;
+    }
+
+    .output-box a:hover {
+      text-decoration: underline;
+    }
+
+    .copy-btn {
+      position: absolute;
+      top: 50%;
+      right: 8px;
+      transform: translateY(-50%);
+      background: var(--card-background);
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+      padding: 6px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.15s ease;
+    }
+
+    .copy-btn:hover {
+      background: var(--secondary-color);
+      color: var(--background-color);
+      border-color: var(--secondary-color);
+    }
+
+    .copy-btn:active {
+      transform: translateY(-50%) scale(0.95);
+    }
+
+    .copy-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--success-color);
+      color: var(--background-color);
+      padding: 10px 20px;
+      border-radius: 6px;
+      font-weight: 600;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      transition: transform 0.3s ease;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .toast.error {
+      background: var(--error-color);
+      color: var(--text-color);
+    }
+
+    .help {
+      font-size: 0.85rem;
+      color: var(--muted-text);
+      margin-top: 8px;
+    }
+
+    .help code {
+      background: var(--input-background);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+  </style>
+</head>
+<body>
+  <h1>Article URL Enricher</h1>
+  <p class="subtitle">Wrap an Armorcode support article URL with a Zendesk SSO redirect so basic users can read it while logged in.</p>
+
+  <div class="container">
+    <div class="card">
+      <label for="subdomain">Subdomain</label>
+      <div class="subdomain-row">
+        <input type="text" id="subdomain" value="app" autocomplete="off" spellcheck="false" />
+        <span class="suffix">.armorcode.com</span>
+      </div>
+      <div class="preset-row" id="presets"></div>
+      <p class="help">The customer's Armorcode subdomain. Examples: <code>app</code>, <code>eu</code>, <code>stifel</code>, <code>allianz</code>.</p>
+    </div>
+
+    <div class="card">
+      <label for="article-url">Article URL</label>
+      <textarea
+        id="article-url"
+        class="url-input"
+        placeholder="Paste a support.armorcode.com article URL here…"
+        autocomplete="off"
+        spellcheck="false"
+      ></textarea>
+      <p class="help">Pasting auto-copies the enriched URL to your clipboard.</p>
+    </div>
+
+    <div class="card output-card">
+      <div class="output-header">
+        <label class="output-label">Enriched URL</label>
+      </div>
+      <div class="output-box empty" id="output">Enter an article URL above to generate the enriched link.</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Copied to clipboard</div>
+
+  <script>
+    const PRESETS = ['app', 'eu', 'stifel', 'allianz'];
+
+    const subdomainInput = document.getElementById('subdomain');
+    const articleInput = document.getElementById('article-url');
+    const output = document.getElementById('output');
+    const presetRow = document.getElementById('presets');
+    const toast = document.getElementById('toast');
+
+    PRESETS.forEach(name => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'preset-btn';
+      btn.textContent = name;
+      btn.addEventListener('click', () => {
+        subdomainInput.value = name;
+        updateOutput();
+        refreshPresets();
+        subdomainInput.focus();
+      });
+      presetRow.appendChild(btn);
+    });
+
+    function refreshPresets() {
+      const current = subdomainInput.value.trim().toLowerCase();
+      presetRow.querySelectorAll('.preset-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent === current);
+      });
+    }
+
+    function buildUrl() {
+      const subdomain = subdomainInput.value.trim();
+      const article = articleInput.value.trim();
+      if (!subdomain || !article) return '';
+      try {
+        new URL(article);
+      } catch {
+        return '';
+      }
+      return `https://${subdomain}.armorcode.com/api/jwt/zendesk/sso?return_to=${article}`;
+    }
+
+    function updateOutput() {
+      const url = buildUrl();
+      if (!url) {
+        output.classList.add('empty');
+        output.textContent = 'Enter an article URL above to generate the enriched link.';
+        return;
+      }
+      output.classList.remove('empty');
+      output.innerHTML = '';
+
+      const link = document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.textContent = url;
+
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'copy-btn';
+      btn.title = 'Copy URL';
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        Copy
+      `;
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        copyToClipboard(url);
+      });
+
+      output.appendChild(link);
+      output.appendChild(btn);
+    }
+
+    async function copyToClipboard(text, message = 'Copied to clipboard') {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(message);
+        return true;
+      } catch {
+        try {
+          const tmp = document.createElement('textarea');
+          tmp.value = text;
+          tmp.setAttribute('readonly', '');
+          tmp.style.position = 'absolute';
+          tmp.style.left = '-9999px';
+          document.body.appendChild(tmp);
+          tmp.select();
+          document.execCommand('copy');
+          document.body.removeChild(tmp);
+          showToast(message);
+          return true;
+        } catch {
+          showToast('Copy failed — select and copy manually', true);
+          return false;
+        }
+      }
+    }
+
+    let toastTimer = null;
+    function showToast(message, isError = false) {
+      toast.textContent = message;
+      toast.classList.toggle('error', isError);
+      toast.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+    }
+
+    subdomainInput.addEventListener('input', () => {
+      updateOutput();
+      refreshPresets();
+    });
+
+    articleInput.addEventListener('input', updateOutput);
+
+    articleInput.addEventListener('paste', e => {
+      const pasted = (e.clipboardData || window.clipboardData)?.getData('text') ?? '';
+      if (!pasted) return;
+      e.preventDefault();
+      articleInput.value = pasted.trim();
+      updateOutput();
+      const url = buildUrl();
+      if (url) {
+        copyToClipboard(url, 'Enriched URL copied');
+      }
+    });
+
+    refreshPresets();
+    updateOutput();
+  </script>
+</body>
+</html>
