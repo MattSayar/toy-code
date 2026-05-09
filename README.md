@@ -105,4 +105,4 @@ An interactive tool for formatting and syntax-highlighting incomplete or truncat
 ### Article URL Enricher
 [Try it now](https://code.mattsayar.com/article-url-enricher.html)
 
-Wraps an Armorcode support article URL with a Zendesk SSO redirect so basic users can read it while logged in. Choose a subdomain, paste the article link, and the enriched URL is auto-copied to your clipboard.
+Wraps an Armorcode support article URL with a Zendesk SSO redirect so basic users can read it while logged in. Choose a subdomain, paste the article link, and the enriched URL is auto-copied to your clipboard. Custom subdomains you enter are remembered locally and shown as removable pills.
