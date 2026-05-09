@@ -138,6 +138,36 @@
       border-color: var(--secondary-color);
     }
 
+    .preset-btn.custom {
+      padding-right: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .preset-btn .remove {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: transparent;
+      color: inherit;
+      opacity: 0.6;
+      font-size: 0.9rem;
+      line-height: 1;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .preset-btn .remove:hover {
+      opacity: 1;
+      background: rgba(255, 85, 85, 0.25);
+      color: var(--error-color);
+    }
+
     .url-input {
       width: 100%;
       background: var(--input-background);
@@ -293,7 +323,7 @@
         <span class="suffix">.armorcode.com</span>
       </div>
       <div class="preset-row" id="presets"></div>
-      <p class="help">The customer's Armorcode subdomain. Examples: <code>app</code>, <code>eu</code>, <code>stifel</code>, <code>allianz</code>.</p>
+      <p class="help">The customer's Armorcode subdomain. New entries are saved as pills automatically.</p>
     </div>
 
     <div class="card">
@@ -319,7 +349,9 @@
   <div class="toast" id="toast">Copied to clipboard</div>
 
   <script>
-    const PRESETS = ['app', 'eu', 'stifel', 'allianz'];
+    const DEFAULT_PRESETS = ['app', 'eu'];
+    const STORAGE_KEY = 'articleUrlEnricher.customSubdomains';
+    const VALID_SUBDOMAIN = /^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/i;
 
     const subdomainInput = document.getElementById('subdomain');
     const articleInput = document.getElementById('article-url');
@@ -327,25 +359,84 @@
     const presetRow = document.getElementById('presets');
     const toast = document.getElementById('toast');
 
-    PRESETS.forEach(name => {
+    function loadCustomPresets() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return [];
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed.filter(s => typeof s === 'string' && s.length);
+      } catch {
+        return [];
+      }
+    }
+
+    function saveCustomPresets(list) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+      } catch {
+        /* ignore storage errors (quota, private mode) */
+      }
+    }
+
+    let customPresets = loadCustomPresets();
+
+    function renderPresets() {
+      presetRow.innerHTML = '';
+      DEFAULT_PRESETS.forEach(name => presetRow.appendChild(makePill(name, false)));
+      customPresets.forEach(name => presetRow.appendChild(makePill(name, true)));
+      refreshPresets();
+    }
+
+    function makePill(name, removable) {
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'preset-btn';
-      btn.textContent = name;
+      btn.className = 'preset-btn' + (removable ? ' custom' : '');
+      btn.dataset.subdomain = name;
+
+      const label = document.createElement('span');
+      label.textContent = name;
+      btn.appendChild(label);
+
+      if (removable) {
+        const remove = document.createElement('span');
+        remove.className = 'remove';
+        remove.textContent = '×';
+        remove.title = `Remove ${name}`;
+        remove.addEventListener('click', e => {
+          e.stopPropagation();
+          customPresets = customPresets.filter(s => s !== name);
+          saveCustomPresets(customPresets);
+          renderPresets();
+        });
+        btn.appendChild(remove);
+      }
+
       btn.addEventListener('click', () => {
         subdomainInput.value = name;
         updateOutput();
         refreshPresets();
         subdomainInput.focus();
       });
-      presetRow.appendChild(btn);
-    });
+
+      return btn;
+    }
 
     function refreshPresets() {
       const current = subdomainInput.value.trim().toLowerCase();
       presetRow.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.textContent === current);
+        btn.classList.toggle('active', btn.dataset.subdomain === current);
       });
+    }
+
+    function rememberSubdomain(name) {
+      const clean = name.trim().toLowerCase();
+      if (!clean || !VALID_SUBDOMAIN.test(clean)) return false;
+      if (DEFAULT_PRESETS.includes(clean) || customPresets.includes(clean)) return false;
+      customPresets.push(clean);
+      saveCustomPresets(customPresets);
+      renderPresets();
+      return true;
     }
 
     function buildUrl() {
@@ -436,6 +527,10 @@
       refreshPresets();
     });
 
+    subdomainInput.addEventListener('blur', () => {
+      rememberSubdomain(subdomainInput.value);
+    });
+
     articleInput.addEventListener('input', updateOutput);
 
     articleInput.addEventListener('paste', e => {
@@ -447,10 +542,11 @@
       const url = buildUrl();
       if (url) {
         copyToClipboard(url, 'Enriched URL copied');
+        rememberSubdomain(subdomainInput.value);
       }
     });
 
-    refreshPresets();
+    renderPresets();
     updateOutput();
   </script>
 </body>
