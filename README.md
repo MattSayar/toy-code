@@ -95,6 +95,13 @@ A habit and daily task tracker with a sleek, dark-themed interface. Track up to 
 
 A web-based tool for optimizing school bus routes. Upload a CSV file with stop addresses to automatically organize routes by cardinal direction and generate optimized Google Maps navigation links.
 
+## Photo Tools
+
+### Wiggle-Wiggle (with Google Photos support)
+[See the project](https://github.com/MattSayar/toy-code/tree/main/wiggle-wiggle)
+
+A Python tool that finds and extracts wiggle stereographs (wigglegrams) hiding in your photo library and exports them as looping boomerang GIFs. A wigglegram fakes a 3D effect by rapidly cycling through a short burst of nearly-identical photos shot from slightly different viewpoints. Inspired by [JCLemme/wiggle-wiggle](https://github.com/JCLemme/wiggle-wiggle), this version keeps local-directory mode and adds Google Photos as a first-class source. It fingerprints photos with perceptual hashes, detects runs of consecutive near-duplicate frames, and stitches them into animated GIFs.
+
 ## Developer Tools
 
 ### Incomplete JSON Pretty Printer

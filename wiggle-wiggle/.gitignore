@@ -1,0 +1,13 @@
+# Generated artifacts
+_hashes.json
+wigglegrams/
+*.gif
+
+# OAuth secrets / tokens -- never commit these
+client_secrets.json
+google_photos_token.json
+
+# Python
+venv/
+__pycache__/
+*.pyc

@@ -1,0 +1,9 @@
+# Core image work
+Pillow
+ImageHash
+pillow-heif        # HEIC/HEIF (phone) photo support
+
+# Google Photos source (optional -- only needed for -g/--google-photos)
+google-auth
+google-auth-oauthlib
+requests
