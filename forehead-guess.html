@@ -101,7 +101,9 @@
   .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 12px 18px; font-weight: 900; font-size: 24px; }
   .hud .timer.low { color: #ffe14d; animation: pulse 1s infinite; }
   @keyframes pulse { 50% { transform: scale(1.15); } }
-  #wordBox { position: absolute; left: 4%; right: 4%; top: 14%; bottom: 14%; display: flex; align-items: center; justify-content: center; }
+  #wordBox { position: absolute; left: 4%; right: 4%; top: 14%; bottom: 12%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #pic { line-height: 1; filter: drop-shadow(0 4px 0 rgba(0,0,0,.15)); }
+  #pic:empty { display: none; }
   #word { font-weight: 900; line-height: 1.02; text-align: center; letter-spacing: -1px; text-shadow: 0 4px 0 rgba(0,0,0,.18); overflow-wrap: normal; word-break: keep-all; }
   .taps { position: absolute; inset: 0; display: flex; }
   .taps button { flex: 1; background: transparent; }
@@ -141,6 +143,12 @@
 
   <div class="label">Round length</div>
   <div class="chips" id="timeChips"></div>
+
+  <div class="label">Tilt sensitivity</div>
+  <div class="chips" id="sensChips"></div>
+
+  <div class="label">Pictures</div>
+  <div class="chips" id="picChips"></div>
 
   <div class="label">Pick a deck to start</div>
   <div class="grid" id="deckGrid"></div>
@@ -195,7 +203,7 @@
       <div id="hudScore">⭐ 0</div>
       <div class="timer" id="hudTime">60</div>
     </div>
-    <div id="wordBox"><div id="word"></div></div>
+    <div id="wordBox"><div id="pic"></div><div id="word"></div></div>
     <div class="tapHint"><span>◀ pass</span><span>correct ▶</span></div>
   </div>
   <div id="flash"><div id="flashText"></div><div id="flashWord"></div></div>
@@ -266,7 +274,73 @@
   };
   const CUSTOM_KEY = 'foreheadGuess.custom';
   const TIME_KEY = 'foreheadGuess.time';
+  const SENS_KEY = 'foreheadGuess.sens';
+  const PICS_KEY = 'foreheadGuess.pics';
   const TIMES = [30, 60, 90, 120];
+
+  // Pictures for words, so kids who can't read yet can help give clues.
+  const EMOJI_LIST = {
+    // Animals
+    'Dog':'🐶','Cat':'🐱','Elephant':'🐘','Giraffe':'🦒','Monkey':'🐒','Lion':'🦁','Tiger':'🐯','Penguin':'🐧',
+    'Kangaroo':'🦘','Zebra':'🦓','Frog':'🐸','Snake':'🐍','Rabbit':'🐰','Horse':'🐴','Cow':'🐮','Pig':'🐷',
+    'Duck':'🦆','Chicken':'🐔','Owl':'🦉','Shark':'🦈','Whale':'🐳','Dolphin':'🐬','Octopus':'🐙','Turtle':'🐢',
+    'Bear':'🐻','Panda':'🐼','Koala':'🐨','Butterfly':'🦋','Bee':'🐝','Spider':'🕷️','Crocodile':'🐊','Hippo':'🦛',
+    'Camel':'🐫','Squirrel':'🐿️','Mouse':'🐭','Sheep':'🐑','Goat':'🐐','Parrot':'🦜','Flamingo':'🦩','Peacock':'🦚',
+    'Snail':'🐌','Ladybug':'🐞','Crab':'🦀','Gorilla':'🦍','Deer':'🦌','Fox':'🦊','Wolf':'🐺','Bat':'🦇','Hamster':'🐹',
+    // Food
+    'Pizza':'🍕','Ice Cream':'🍦','Banana':'🍌','Apple':'🍎','Spaghetti':'🍝','Pancakes':'🥞','Popcorn':'🍿',
+    'Hot Dog':'🌭','Taco':'🌮','Cookie':'🍪','Cupcake':'🧁','Watermelon':'🍉','Carrot':'🥕','Sandwich':'🥪',
+    'Cheese':'🧀','Egg':'🥚','Cereal':'🥣','Broccoli':'🥦','Strawberry':'🍓','Grapes':'🍇','Corn on the Cob':'🌽',
+    'Lemon':'🍋','Chocolate':'🍫','Birthday Cake':'🎂','Hamburger':'🍔','French Fries':'🍟','Donut':'🍩',
+    'Pretzel':'🥨','Peanut Butter':'🥜','Milk':'🥛','Orange Juice':'🧃','Lollipop':'🍭','Pickle':'🥒',
+    'Pineapple':'🍍','Soup':'🍲','Waffles':'🧇',
+    // Act It Out
+    'Swimming':'🏊','Sleeping':'😴','Brushing Teeth':'🪥','Dancing':'💃','Sneezing':'🤧','Crying':'😭',
+    'Laughing':'😂','Clapping':'👏','Running':'🏃','Climbing':'🧗','Driving':'🚗','Reading':'📖','Painting':'🎨',
+    'Singing':'🎤','Fishing':'🎣','Yawning':'🥱','Waving':'👋','Hugging':'🤗','Cooking':'🍳','Riding a Bike':'🚴',
+    'Throwing a Ball':'🤾','Blowing Bubbles':'🫧','Ice Skating':'⛸️','Taking a Photo':'📸','Playing Guitar':'🎸',
+    'Playing Drums':'🥁','Washing Hands':'🧼','Tying Shoes':'👟','Building a Snowman':'⛄','Walking a Dog':'🐕',
+    'Flying a Kite':'🪁','Rowing a Boat':'🚣','Eating Spaghetti':'🍝',
+    // At Home
+    'Bed':'🛏️','Chair':'🪑','Toothbrush':'🪥','Television':'📺','Bathtub':'🛁','Toilet':'🚽','Door':'🚪',
+    'Window':'🪟','Couch':'🛋️','Spoon':'🥄','Fork':'🍴','Cup':'☕','Plate':'🍽️','Clock':'⏰','Mirror':'🪞',
+    'Backpack':'🎒','Book':'📚','Crayon':'🖍️','Scissors':'✂️','Umbrella':'☂️','Shoes':'👟','Socks':'🧦','Hat':'🧢',
+    'Teddy Bear':'🧸','Broom':'🧹','Key':'🔑','Soap':'🧼',
+    // Jobs & People
+    'Doctor':'🧑‍⚕️','Teacher':'🧑‍🏫','Firefighter':'🧑‍🚒','Police Officer':'👮','Chef':'🧑‍🍳','Astronaut':'🧑‍🚀',
+    'Farmer':'🧑‍🌾','Pilot':'🧑‍✈️','Dentist':'🦷','Nurse':'🩺','Artist':'🧑‍🎨','Mail Carrier':'📬','Baker':'🍞',
+    'Builder':'👷','Bus Driver':'🚌','Lifeguard':'🛟','Scientist':'🧑‍🔬','Vet':'🐾','Clown':'🤡','Magician':'🎩',
+    'Librarian':'📚','Mechanic':'🧑‍🔧','Zookeeper':'🦁','Singer':'🧑‍🎤','Dancer':'💃','Baby':'👶','Grandma':'👵',
+    'Grandpa':'👴','Coach':'📣','Cowboy':'🤠','Waiter':'🍽️','Photographer':'📷','Plumber':'🪠','Barber':'💈',
+    'Cashier':'💵','Garbage Collector':'🗑️','Superhero':'🦸','Pirate':'🏴‍☠️','King':'🤴','Queen':'👸',
+    // Sports & Games
+    'Soccer':'⚽','Basketball':'🏀','Baseball':'⚾','Football':'🏈','Tennis':'🎾','Hide and Seek':'🙈',
+    'Bowling':'🎳','Golf':'⛳','Skateboard':'🛹','Karate':'🥋','Gymnastics':'🤸','Hockey':'🏒','Volleyball':'🏐',
+    'Ping Pong':'🏓','Puzzle':'🧩','Video Game':'🎮','Musical Chairs':'🎶','Surfing':'🏄','Skiing':'⛷️',
+    'Sledding':'🛷','Roller Skates':'🛼','Frisbee':'🥏','Yo-Yo':'🪀','Building Blocks':'🧱','Slide':'🛝',
+    'Board Game':'🎲','Peekaboo':'🙈','Duck Duck Goose':'🦆','Water Balloon':'🎈',
+    // Nature & Sky
+    'Sun':'☀️','Moon':'🌙','Star':'⭐','Rain':'🌧️','Snow':'🌨️','Rainbow':'🌈','Cloud':'☁️','Thunder':'⛈️',
+    'Lightning':'⚡','Tornado':'🌪️','Wind':'💨','Tree':'🌳','Flower':'🌸','Mountain':'⛰️','Volcano':'🌋',
+    'Ocean':'🌊','River':'🏞️','Beach':'🏖️','Desert':'🏜️','Forest':'🌲','Island':'🏝️','Leaf':'🍃','Rock':'🪨',
+    'Grass':'🌱','Snowflake':'❄️','Ice':'🧊','Campfire':'🔥','Sunset':'🌅','Earth':'🌍','Planet':'🪐',
+    'Seashell':'🐚','Rocket':'🚀','Comet':'☄️',
+    // Make Believe
+    'Dragon':'🐉','Unicorn':'🦄','Mermaid':'🧜‍♀️','Pirate Ship':'🏴‍☠️','Wizard':'🧙','Fairy':'🧚','Princess':'👸',
+    'Knight':'🛡️','Castle':'🏰','Robot':'🤖','Alien':'👽','Friendly Monster':'👾','Ghost':'👻','Magic Wand':'🪄',
+    'Treasure Chest':'💰','Spaceship':'🛸','Dinosaur':'🦖','Troll':'🧌','Genie':'🧞','Crown':'👑','Elf':'🧝',
+    'Ninja':'🥷','Time Machine':'⏳','Snowman':'⛄','Tooth Fairy':'🦷','Leprechaun':'🍀','Superpower':'💪',
+    'Bigfoot':'👣','Fairy Godmother':'🧚','Treasure Map':'🗺️','Crystal Ball':'🔮','Golden Egg':'🥚',
+    // Things That Go
+    'Car':'🚗','Bus':'🚌','Train':'🚆','Airplane':'✈️','Helicopter':'🚁','Boat':'🚤','Bicycle':'🚲',
+    'Motorcycle':'🏍️','Fire Truck':'🚒','Ambulance':'🚑','Police Car':'🚓','Tractor':'🚜','Rocket Ship':'🚀',
+    'School Bus':'🚌','Taxi':'🚕','Scooter':'🛴','Hot Air Balloon':'🎈','Sailboat':'⛵','Canoe':'🛶',
+    'Race Car':'🏎️','Ice Cream Truck':'🍦','Crane':'🏗️','Roller Coaster':'🎢','Cable Car':'🚡',
+    'Steam Train':'🚂','Kayak':'🛶',
+  };
+  const EMOJI = {};
+  for (const [w, e] of Object.entries(EMOJI_LIST)) EMOJI[w.toLowerCase()] = e;
+  const emojiFor = w => EMOJI[String(w).trim().toLowerCase()] || '';
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
@@ -332,15 +406,22 @@
   //   screen normal (z): cos(beta)cos(gamma)   -> +1 screen faces sky, -1 faces floor, 0 upright
   //   device x (right):  -cos(beta)sin(gamma)  -> tells which way the phone is turned sideways
   // This works the same whether the phone is held portrait or landscape.
-  const TRIGGER = 0.55;  // ~33 degrees past vertical
-  const REARM = 0.3;     // must come back near vertical before the next tilt counts
-  const tilt = { has: false, z: 0, x: 0, last: 0 };
+  // Tilt is measured in degrees away from the player's own "neutral" angle (foreheads slope,
+  // so neutral is rarely exactly vertical). Negative = screen toward floor, positive = toward sky.
+  const SENS = {
+    low:    { label: 'Low',    trig: 35 },
+    medium: { label: 'Medium', trig: 24 },
+    high:   { label: 'High',   trig: 16 },
+  };
+  const tilt = { has: false, z: 0, deg: 0, x: 0, last: 0 };
   const D = Math.PI / 180;
   function onOrient(e) {
     if (e.beta == null || e.gamma == null) return;
     const b = e.beta * D, g = e.gamma * D;
     const z = Math.cos(b) * Math.cos(g);
-    tilt.z = tilt.has ? tilt.z * 0.4 + z * 0.6 : z;
+    tilt.z = z;
+    const deg = Math.asin(Math.max(-1, Math.min(1, z))) / D;
+    tilt.deg = tilt.has ? tilt.deg * 0.3 + deg * 0.7 : deg;
     tilt.x = -Math.cos(b) * Math.sin(g);
     tilt.has = true;
     tilt.last = performance.now();
@@ -380,6 +461,9 @@
     deck: null, time: Number(store.get(TIME_KEY, 60)) || 60,
     pool: [], word: '', results: [], endAt: 0, timerId: null,
     armed: false, uprightSince: 0, countId: null,
+    base: 0, steadyRef: 0, steadySince: 0,
+    sens: SENS[store.get(SENS_KEY, 'medium')] ? store.get(SENS_KEY, 'medium') : 'medium',
+    pics: store.get(PICS_KEY, '1') === '1',
   };
 
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -397,14 +481,22 @@
 
   // ---------------- Home screen ----------------
   function buildHome() {
-    const chips = $('timeChips'); chips.innerHTML = '';
-    TIMES.forEach(t => {
-      const b = document.createElement('button');
-      b.className = 'chip' + (t === game.time ? ' on' : '');
-      b.textContent = t + 's';
-      b.onclick = () => { game.time = t; store.set(TIME_KEY, t); buildHome(); };
-      chips.appendChild(b);
-    });
+    const chipRow = (id, opts, isOn, pick) => {
+      const row = $(id); row.innerHTML = '';
+      opts.forEach(([val, text]) => {
+        const b = document.createElement('button');
+        b.className = 'chip' + (isOn(val) ? ' on' : '');
+        b.textContent = text;
+        b.onclick = () => { pick(val); buildHome(); };
+        row.appendChild(b);
+      });
+    };
+    chipRow('timeChips', TIMES.map(t => [t, t + 's']), t => t === game.time,
+      t => { game.time = t; store.set(TIME_KEY, t); });
+    chipRow('sensChips', Object.entries(SENS).map(([k, s]) => [k, s.label]), k => k === game.sens,
+      k => { game.sens = k; store.set(SENS_KEY, k); });
+    chipRow('picChips', [[true, '🐶 On'], [false, 'Off']], v => v === game.pics,
+      v => { game.pics = v; store.set(PICS_KEY, v ? '1' : '0'); });
     const grid = $('deckGrid'); grid.innerHTML = '';
     const keys = [...Object.keys(DECKS), 'mix', 'custom'];
     keys.forEach(k => {
@@ -480,6 +572,7 @@
   // ---------------- Countdown ----------------
   function startCountdown() {
     if (game.phase !== 'ready') return;
+    if (!game.uprightSince) game.base = sensorLive() && Math.abs(tilt.deg) < 40 ? tilt.deg : 0;
     game.phase = 'countdown';
     setViewportVars();
     lockStageRotation();
@@ -503,7 +596,8 @@
     game.phase = 'play';
     game.results = [];
     game.word = '';
-    game.armed = !sensorLive() || Math.abs(tilt.z) < REARM;
+    game.armed = true;
+    game.steadyRef = game.base; game.steadySince = performance.now();
     game.endAt = performance.now() + game.time * 1000;
     $('hudScore').textContent = '⭐ 0';
     layer('playLayer');
@@ -526,13 +620,19 @@
   function nextWord() {
     game.word = drawWord();
     $('word').textContent = game.word;
+    $('pic').textContent = game.pics ? emojiFor(game.word) : '';
     fitWord();
   }
 
   function fitWord() {
-    const box = $('wordBox'), el = $('word');
-    const w = box.clientWidth, h = box.clientHeight;
+    const box = $('wordBox'), el = $('word'), pic = $('pic');
+    const w = box.clientWidth;
+    let h = box.clientHeight;
     if (!w || !h) return;
+    if (pic.textContent) {
+      pic.style.fontSize = Math.min(h * 0.4, w * 0.3) + 'px';
+      h -= pic.offsetHeight + h * 0.03;
+    }
     let size = Math.min(h * 0.8, w * 0.35);
     el.style.fontSize = size + 'px';
     let guard = 60;
@@ -552,7 +652,7 @@
     const f = $('flash');
     f.className = 'show ' + (ok ? 'good' : 'pass');
     $('flashText').textContent = ok ? 'CORRECT!' : 'PASS';
-    $('flashWord').textContent = game.word;
+    $('flashWord').textContent = (game.pics && emojiFor(game.word) ? emojiFor(game.word) + ' ' : '') + game.word;
     if (ok) { sfx.good(); buzz(60); } else { sfx.pass(); buzz([30, 40, 30]); }
     setTimeout(() => {
       if (game.phase !== 'flash') return;
@@ -565,10 +665,11 @@
 
   function onTilt() {
     if (game.phase === 'ready') {
-      const upright = Math.abs(tilt.z) < 0.35;
+      const upright = Math.abs(tilt.deg) < 30;
       const now = performance.now();
       if (upright) {
-        if (!game.uprightSince) game.uprightSince = now;
+        if (!game.uprightSince) { game.uprightSince = now; game.base = tilt.deg; }
+        game.base += (tilt.deg - game.base) * 0.15;
         const pct = Math.min(1, (now - game.uprightSince) / 900);
         $('readyMeter').style.width = (pct * 100) + '%';
         $('readyStatus').textContent = 'Hold still…';
@@ -580,13 +681,30 @@
       }
       return;
     }
-    if (game.phase !== 'play') return;
-    if (!game.armed) {
-      if (Math.abs(tilt.z) < REARM) game.armed = true;
+    if (game.phase === 'countdown') {
+      // Player is holding still on their forehead: learn their neutral angle.
+      if (Math.abs(tilt.deg) < 40) game.base += (tilt.deg - game.base) * 0.1;
       return;
     }
-    if (tilt.z < -TRIGGER) mark(true);       // screen toward the floor = got it
-    else if (tilt.z > TRIGGER) mark(false);  // screen toward the sky = pass
+    if (game.phase !== 'play') return;
+    const trig = SENS[game.sens].trig;
+    const now = performance.now();
+    // Track whether the phone is being held still.
+    if (Math.abs(tilt.deg - game.steadyRef) > 5) { game.steadyRef = tilt.deg; game.steadySince = now; }
+    const steady = now - game.steadySince > 600;
+    // Held still short of a trigger: that's the player's (possibly shifted) neutral.
+    if (steady && Math.abs(tilt.deg - game.base) < trig * 0.85 && Math.abs(tilt.deg) < 45) {
+      game.base = game.steadyRef;
+      game.armed = true;
+    }
+    const rel = tilt.deg - game.base;
+    if (!game.armed) {
+      // Re-arm once the phone comes about halfway back toward neutral.
+      if (Math.abs(rel) < trig * 0.5) game.armed = true;
+      return;
+    }
+    if (rel < -trig) mark(true);       // screen toward the floor = got it
+    else if (rel > trig) mark(false);  // screen toward the sky = pass
   }
 
   $('tapGood').onclick = () => mark(true);
@@ -623,7 +741,8 @@
     game.results.forEach(r => {
       const d = document.createElement('div');
       d.className = 'item ' + (r.ok ? 'ok' : 'no');
-      const name = document.createElement('span'); name.textContent = r.word;
+      const name = document.createElement('span');
+      name.textContent = (game.pics && emojiFor(r.word) ? emojiFor(r.word) + '  ' : '') + r.word;
       const mk = document.createElement('span'); mk.textContent = r.ok ? '✅' : '⏭️';
       d.append(name, mk);
       list.appendChild(d);
