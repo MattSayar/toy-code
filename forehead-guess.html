@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#4b1fd1">
+<title>Forehead Guess</title>
+<style>
+  :root {
+    --bg: #4b1fd1;
+    --bg2: #7a3cff;
+    --ink: #ffffff;
+    --muted: rgba(255,255,255,0.75);
+    --card: rgba(255,255,255,0.14);
+    --good: #19c26b;
+    --pass: #ff8a1f;
+    --warn: #ff3b5c;
+    --vw: 100vw;
+    --vh: 100vh;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0; height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    overscroll-behavior: none;
+  }
+  body { background: radial-gradient(circle at 20% 0%, var(--bg2), var(--bg) 60%); background-attachment: fixed; }
+  button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  /* ---------- Home ---------- */
+  #home {
+    flex-direction: column; align-items: center;
+    min-height: 100%;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  .title { font-size: clamp(36px, 11vw, 64px); font-weight: 900; margin: 8px 0 2px; letter-spacing: -1px; text-align: center; line-height: 1; }
+  .title span { display: inline-block; transform: rotate(-4deg); }
+  .subtitle { color: var(--muted); text-align: center; margin: 8px 0 18px; font-size: 15px; max-width: 420px; line-height: 1.4; }
+  .label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 6px 0 8px; align-self: flex-start; width: 100%; max-width: 560px; margin-left: auto; margin-right: auto; }
+  .chips { display: flex; gap: 8px; width: 100%; max-width: 560px; margin-bottom: 18px; }
+  .chip { flex: 1; padding: 12px 0; border-radius: 14px; background: var(--card); font-weight: 800; font-size: 17px; }
+  .chip.on { background: #fff; color: var(--bg); }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 560px; }
+  @media (min-width: 520px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+  .deck {
+    border-radius: 20px; padding: 16px 10px 14px;
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    font-weight: 800; font-size: 16px; min-height: 112px; justify-content: center;
+    box-shadow: 0 6px 0 rgba(0,0,0,0.18);
+    transition: transform .08s;
+  }
+  .deck:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.18); }
+  .deck .emoji { font-size: 40px; line-height: 1; }
+  .deck .count { font-size: 12px; font-weight: 600; opacity: .85; }
+  .howto { width: 100%; max-width: 560px; margin-top: 22px; background: var(--card); border-radius: 18px; padding: 14px 16px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+  .howto b { color: #fff; }
+  .howto ol { margin: 6px 0 0; padding-left: 20px; }
+
+  /* ---------- Generic centered screens ---------- */
+  .center {
+    position: fixed; inset: 0;
+    flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    padding: max(20px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+    gap: 14px;
+  }
+  .big-emoji { font-size: 72px; line-height: 1; }
+  .h2 { font-size: 28px; font-weight: 900; margin: 0; }
+  .p { color: var(--muted); font-size: 16px; margin: 0; max-width: 420px; line-height: 1.45; }
+  .btn { padding: 15px 24px; border-radius: 16px; background: #fff; color: var(--bg); font-weight: 900; font-size: 18px; min-width: 200px; box-shadow: 0 5px 0 rgba(0,0,0,.2); }
+  .btn.ghost { background: var(--card); color: #fff; box-shadow: none; }
+  .btn:active { transform: translateY(2px); }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .meter { width: 220px; height: 12px; border-radius: 6px; background: var(--card); overflow: hidden; }
+  .meter > div { height: 100%; width: 0; background: #fff; transition: width .1s; }
+  .status { font-weight: 800; font-size: 15px; min-height: 20px; }
+
+  /* ---------- Stage (countdown + play), can be rotated ---------- */
+  #stage {
+    position: fixed; top: 0; left: 0; width: var(--vw); height: var(--vh);
+    display: none; overflow: hidden;
+    background: var(--deck-color, var(--bg));
+  }
+  #stage.active { display: block; }
+  #stage.rot {
+    top: 50%; left: 50%;
+    width: var(--vh); height: var(--vw);
+    transform: translate(-50%, -50%) rotate(var(--rot, 0deg));
+  }
+  .layer { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .layer.active { display: flex; }
+  #countNum { font-size: min(40vw, 40vh, 260px); font-weight: 900; line-height: 1; animation: pop .9s ease-out; }
+  #countHint { font-size: 22px; font-weight: 800; opacity: .85; }
+  @keyframes pop { from { transform: scale(1.6); opacity: 0; } 30% { opacity: 1; } to { transform: scale(1); } }
+  .hud { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; padding: 12px 18px; font-weight: 900; font-size: 24px; }
+  .hud .timer.low { color: #ffe14d; animation: pulse 1s infinite; }
+  @keyframes pulse { 50% { transform: scale(1.15); } }
+  #wordBox { position: absolute; left: 4%; right: 4%; top: 14%; bottom: 14%; display: flex; align-items: center; justify-content: center; }
+  #word { font-weight: 900; line-height: 1.02; text-align: center; letter-spacing: -1px; text-shadow: 0 4px 0 rgba(0,0,0,.18); overflow-wrap: normal; word-break: keep-all; }
+  .taps { position: absolute; inset: 0; display: flex; }
+  .taps button { flex: 1; background: transparent; }
+  .tapHint { position: absolute; bottom: 10px; left: 0; right: 0; display: flex; justify-content: space-between; padding: 0 18px; font-size: 13px; font-weight: 700; opacity: .55; pointer-events: none; }
+  #flash { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; flex-direction: column; font-weight: 900; z-index: 5; }
+  #flash.show { display: flex; animation: flashIn .25s ease-out; }
+  #flash.good { background: var(--good); }
+  #flash.pass { background: var(--pass); }
+  #flash.end { background: var(--warn); }
+  #flashText { font-size: min(18vw, 18vh, 140px); line-height: 1; }
+  #flashWord { font-size: min(7vw, 7vh, 44px); opacity: .9; margin-top: 10px; }
+  @keyframes flashIn { from { transform: scale(1.08); opacity: .4; } to { transform: scale(1); opacity: 1; } }
+
+  /* ---------- Results ---------- */
+  #results {
+    flex-direction: column; align-items: center; min-height: 100%;
+    padding: max(24px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom));
+  }
+  .score { font-size: 96px; font-weight: 900; line-height: 1; margin: 6px 0 0; }
+  .scoreLbl { color: var(--muted); font-weight: 800; margin-bottom: 14px; }
+  .list { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 8px; margin: 10px 0 20px; }
+  .item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 14px; font-weight: 800; font-size: 18px; }
+  .item.ok { background: rgba(25,194,107,.9); }
+  .item.no { background: rgba(255,255,255,.12); color: var(--muted); }
+
+  /* ---------- Custom words ---------- */
+  #custom { flex-direction: column; align-items: center; min-height: 100%; padding: max(20px, env(safe-area-inset-top)) 16px 24px; gap: 12px; }
+  #custom textarea { width: 100%; max-width: 560px; height: 46vh; border-radius: 16px; border: 0; padding: 14px; font: inherit; font-size: 17px; color: #222; resize: vertical; -webkit-user-select: text; user-select: text; }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<section id="home" class="screen active">
+  <h1 class="title"><span>Forehead</span> <span>Guess!</span></h1>
+  <p class="subtitle">Hold the phone on your forehead. Friends give clues. Tilt <b>down</b> if you got it, tilt <b>up</b> to pass.</p>
+
+  <div class="label">Round length</div>
+  <div class="chips" id="timeChips"></div>
+
+  <div class="label">Pick a deck to start</div>
+  <div class="grid" id="deckGrid"></div>
+
+  <div class="howto">
+    <b>How to play</b>
+    <ol>
+      <li>Pick a deck. Hold the phone <b>sideways</b> on your forehead, screen facing your friends.</li>
+      <li>Friends act, describe, or make sounds. No saying the word!</li>
+      <li><b>Tilt down</b> (nod) = got it ✅ &nbsp; <b>Tilt up</b> = pass ⏭️</li>
+    </ol>
+    <div style="margin-top:8px">Tip: on iPhone, turn on <b>Rotation Lock</b> so the screen doesn't flip mid-round. No tilt sensor? Tap the right side for correct, left side to pass.</div>
+  </div>
+</section>
+
+<!-- CUSTOM WORDS -->
+<section id="custom" class="screen">
+  <h2 class="h2">✏️ My Words</h2>
+  <p class="p">One word or phrase per line (or separate with commas). Saved on this device.</p>
+  <textarea id="customText" placeholder="Grandma's house&#10;Our dog Biscuit&#10;Taco Tuesday"></textarea>
+  <div class="row">
+    <button class="btn ghost" id="customBack">Back</button>
+    <button class="btn" id="customPlay">Save &amp; Play</button>
+  </div>
+</section>
+
+<!-- READY -->
+<section id="ready" class="screen center">
+  <div class="big-emoji">🤳</div>
+  <h2 class="h2">Put it on your forehead!</h2>
+  <p class="p" id="readyMsg">Hold the phone sideways, screen facing out. The round starts when it's steady.</p>
+  <div class="meter"><div id="readyMeter"></div></div>
+  <div class="status" id="readyStatus"></div>
+  <div class="row">
+    <button class="btn ghost" id="readyBack">Back</button>
+    <button class="btn" id="readyGo">Start now</button>
+  </div>
+</section>
+
+<!-- STAGE: countdown + play -->
+<div id="stage">
+  <div class="layer" id="countLayer">
+    <div id="countHint">Get ready…</div>
+    <div id="countNum">3</div>
+  </div>
+  <div class="layer" id="playLayer">
+    <div class="taps">
+      <button id="tapPass" aria-label="Pass"></button>
+      <button id="tapGood" aria-label="Correct"></button>
+    </div>
+    <div class="hud">
+      <div id="hudScore">⭐ 0</div>
+      <div class="timer" id="hudTime">60</div>
+    </div>
+    <div id="wordBox"><div id="word"></div></div>
+    <div class="tapHint"><span>◀ pass</span><span>correct ▶</span></div>
+  </div>
+  <div id="flash"><div id="flashText"></div><div id="flashWord"></div></div>
+</div>
+
+<!-- RESULTS -->
+<section id="results" class="screen">
+  <div class="big-emoji" id="resEmoji">🎉</div>
+  <div class="score" id="resScore">0</div>
+  <div class="scoreLbl" id="resLbl">correct</div>
+  <div class="row">
+    <button class="btn" id="againBtn">Play again</button>
+    <button class="btn ghost" id="menuBtn">Decks</button>
+  </div>
+  <div class="list" id="resList"></div>
+</section>
+
+<script>
+(() => {
+  // ---------------- Dictionary (kid friendly) ----------------
+  const DECKS = {
+    animals: { name: 'Animals', emoji: '🦁', color: '#f5a623', words: [
+      'Dog','Cat','Elephant','Giraffe','Monkey','Lion','Tiger','Penguin','Kangaroo','Zebra',
+      'Frog','Snake','Rabbit','Horse','Cow','Pig','Duck','Chicken','Owl','Shark',
+      'Whale','Dolphin','Octopus','Turtle','Bear','Panda','Koala','Butterfly','Bee','Spider',
+      'Crocodile','Hippo','Camel','Squirrel','Mouse','Sheep','Goat','Parrot','Flamingo','Peacock',
+      'Snail','Ladybug','Jellyfish','Crab','Gorilla','Deer','Fox','Wolf','Bat','Hamster']},
+    food: { name: 'Yummy Food', emoji: '🍕', color: '#ff5a5f', words: [
+      'Pizza','Ice Cream','Banana','Apple','Spaghetti','Pancakes','Popcorn','Hot Dog','Taco','Cookie',
+      'Cupcake','Watermelon','Carrot','Sandwich','Cheese','Egg','Cereal','Broccoli','Strawberry','Grapes',
+      'Corn on the Cob','Lemon','Chocolate','Birthday Cake','Hamburger','French Fries','Donut','Pretzel','Peanut Butter','Milk',
+      'Orange Juice','Lollipop','Marshmallow','Pickle','Pineapple','Bubble Gum','Soup','Waffles','Muffin','Cotton Candy']},
+    actions: { name: 'Act It Out', emoji: '🕺', color: '#00b8a9', words: [
+      'Jumping','Swimming','Sleeping','Brushing Teeth','Dancing','Sneezing','Crying','Laughing','Clapping','Running',
+      'Climbing','Flying','Driving','Reading','Painting','Singing','Fishing','Skipping','Hopping','Yawning',
+      'Waving','Tickling','Hugging','Cooking','Riding a Bike','Throwing a Ball','Blowing Bubbles','Jumping Rope','Ice Skating','Taking a Photo',
+      'Playing Guitar','Playing Drums','Washing Hands','Tying Shoes','Building a Snowman','Walking a Dog','Flying a Kite','Hula Hoop','Rowing a Boat','Eating Spaghetti']},
+    house: { name: 'At Home', emoji: '🏠', color: '#3d8bfd', words: [
+      'Bed','Chair','Table','Toothbrush','Pillow','Blanket','Lamp','Television','Refrigerator','Bathtub',
+      'Toilet','Sink','Door','Window','Stairs','Couch','Spoon','Fork','Cup','Plate',
+      'Clock','Mirror','Backpack','Book','Crayon','Scissors','Umbrella','Shoes','Socks','Hat',
+      'Pajamas','Teddy Bear','Broom','Vacuum','Washing Machine','Oven','Key','Remote Control','Soap','Towel']},
+    people: { name: 'Jobs & People', emoji: '👩‍🚒', color: '#e05297', words: [
+      'Doctor','Teacher','Firefighter','Police Officer','Chef','Astronaut','Farmer','Pilot','Dentist','Nurse',
+      'Artist','Mail Carrier','Baker','Builder','Bus Driver','Lifeguard','Scientist','Vet','Clown','Magician',
+      'Librarian','Mechanic','Zookeeper','Singer','Dancer','Baby','Grandma','Grandpa','Coach','Cowboy',
+      'Waiter','Photographer','Plumber','Barber','Cashier','Garbage Collector','Superhero','Pirate','King','Queen']},
+    games: { name: 'Sports & Games', emoji: '⚽', color: '#20a33a', words: [
+      'Soccer','Basketball','Baseball','Football','Tennis','Hide and Seek','Tag','Hopscotch','Bowling','Golf',
+      'Skateboard','Karate','Gymnastics','Hockey','Volleyball','Ping Pong','Trampoline','Puzzle','Video Game','Tug of War',
+      'Musical Chairs','Freeze Tag','Simon Says','Kickball','Surfing','Skiing','Sledding','Roller Skates','Dodgeball','Frisbee',
+      'Yo-Yo','Building Blocks','Swing','Slide','Seesaw','Sandcastle','Board Game','Peekaboo','Duck Duck Goose','Water Balloon']},
+    nature: { name: 'Nature & Sky', emoji: '🌈', color: '#1fb5e0', words: [
+      'Sun','Moon','Star','Rain','Snow','Rainbow','Cloud','Thunder','Lightning','Tornado',
+      'Wind','Tree','Flower','Mountain','Volcano','Ocean','River','Beach','Desert','Forest',
+      'Cave','Island','Waterfall','Puddle','Leaf','Rock','Grass','Snowflake','Ice','Campfire',
+      'Sunset','Earth','Planet','Seashell','Mud','Pond','Pinecone','Acorn','Rocket','Comet']},
+    pretend: { name: 'Make Believe', emoji: '🦄', color: '#9b51e0', words: [
+      'Dragon','Unicorn','Mermaid','Pirate Ship','Wizard','Fairy','Princess','Knight','Castle','Giant',
+      'Robot','Alien','Friendly Monster','Ghost','Magic Wand','Treasure Chest','Spaceship','Dinosaur','Troll','Genie',
+      'Crown','Elf','Ninja','Flying Carpet','Time Machine','Gingerbread Man','Snowman','Tooth Fairy','Leprechaun','Gnome',
+      'Sea Monster','Superpower','Magic Carpet Ride','Bigfoot','Talking Animal','Fairy Godmother','Invisible','Treasure Map','Crystal Ball','Golden Egg']},
+    vehicles: { name: 'Things That Go', emoji: '🚒', color: '#ef6c00', words: [
+      'Car','Bus','Train','Airplane','Helicopter','Boat','Bicycle','Motorcycle','Fire Truck','Ambulance',
+      'Police Car','Tractor','Rocket Ship','Submarine','School Bus','Taxi','Garbage Truck','Scooter','Hot Air Balloon','Sailboat',
+      'Canoe','Monster Truck','Race Car','Ice Cream Truck','Dump Truck','Bulldozer','Crane','Tow Truck','Wagon','Tricycle',
+      'Roller Coaster','Jet Ski','Skateboard','Pirate Ship','Spaceship','Cable Car','Steam Train','Kayak','Unicycle','Golf Cart']},
+  };
+  const CUSTOM_KEY = 'foreheadGuess.custom';
+  const TIME_KEY = 'foreheadGuess.time';
+  const TIMES = [30, 60, 90, 120];
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+
+  function customWords() {
+    return store.get(CUSTOM_KEY, '').split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+  }
+  function deckWords(key) {
+    if (key === 'mix') return [...new Set(Object.values(DECKS).flatMap(d => d.words))];
+    if (key === 'custom') return customWords();
+    return DECKS[key].words;
+  }
+  function deckMeta(key) {
+    if (key === 'mix') return { name: 'Everything!', emoji: '🎲', color: '#ff4d8d' };
+    if (key === 'custom') return { name: 'My Words', emoji: '✏️', color: '#5b6cff' };
+    return DECKS[key];
+  }
+
+  // ---------------- DOM helpers ----------------
+  const $ = id => document.getElementById(id);
+  const stage = $('stage');
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.toggle('active', s.id === id));
+    stage.classList.toggle('active', id === 'stage');
+    window.scrollTo(0, 0);
+  }
+  function layer(id) {
+    document.querySelectorAll('.layer').forEach(l => l.classList.toggle('active', l.id === id));
+  }
+
+  // ---------------- Audio + haptics ----------------
+  let ac = null;
+  function audio() {
+    if (!ac) { try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {} }
+    if (ac && ac.state === 'suspended') ac.resume();
+    return ac;
+  }
+  function tone(freq, dur, type = 'sine', delay = 0, vol = 0.25) {
+    const a = audio(); if (!a) return;
+    const t = a.currentTime + delay;
+    const o = a.createOscillator(), g = a.createGain();
+    o.type = type; o.frequency.setValueAtTime(freq, t);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(a.destination);
+    o.start(t); o.stop(t + dur + 0.02);
+  }
+  const sfx = {
+    tick: () => tone(660, 0.12, 'square', 0, 0.12),
+    go: () => tone(990, 0.3, 'square', 0, 0.15),
+    good: () => { tone(784, 0.12, 'triangle'); tone(1175, 0.22, 'triangle', 0.1); },
+    pass: () => tone(196, 0.28, 'sawtooth', 0, 0.12),
+    low: () => tone(880, 0.06, 'sine', 0, 0.12),
+    end: () => { tone(523, 0.18, 'square', 0, 0.14); tone(392, 0.18, 'square', 0.18, 0.14); tone(262, 0.4, 'square', 0.36, 0.14); },
+  };
+  const buzz = p => { try { navigator.vibrate && navigator.vibrate(p); } catch (e) {} };
+
+  // ---------------- Tilt sensing ----------------
+  // Using the W3C Z-X'-Y'' Euler convention, the world "up" component of each device axis is:
+  //   screen normal (z): cos(beta)cos(gamma)   -> +1 screen faces sky, -1 faces floor, 0 upright
+  //   device x (right):  -cos(beta)sin(gamma)  -> tells which way the phone is turned sideways
+  // This works the same whether the phone is held portrait or landscape.
+  const TRIGGER = 0.55;  // ~33 degrees past vertical
+  const REARM = 0.3;     // must come back near vertical before the next tilt counts
+  const tilt = { has: false, z: 0, x: 0, last: 0 };
+  const D = Math.PI / 180;
+  function onOrient(e) {
+    if (e.beta == null || e.gamma == null) return;
+    const b = e.beta * D, g = e.gamma * D;
+    const z = Math.cos(b) * Math.cos(g);
+    tilt.z = tilt.has ? tilt.z * 0.4 + z * 0.6 : z;
+    tilt.x = -Math.cos(b) * Math.sin(g);
+    tilt.has = true;
+    tilt.last = performance.now();
+    onTilt();
+  }
+  window.addEventListener('deviceorientation', onOrient);
+  const sensorLive = () => tilt.has && performance.now() - tilt.last < 1000;
+
+  async function requestSensors() {
+    // iOS 13+ requires a permission prompt triggered by a tap.
+    const DOE = window.DeviceOrientationEvent;
+    if (DOE && typeof DOE.requestPermission === 'function') {
+      try {
+        const res = await DOE.requestPermission();
+        if (res === 'granted') window.addEventListener('deviceorientation', onOrient);
+      } catch (e) {}
+    }
+  }
+  function goFullscreen() {
+    const el = document.documentElement;
+    try {
+      const p = el.requestFullscreen ? el.requestFullscreen({ navigationUI: 'hide' }) : null;
+      if (p && p.then) p.then(() => {
+        try { screen.orientation && screen.orientation.lock && screen.orientation.lock('landscape').catch(() => {}); } catch (e) {}
+      }).catch(() => {});
+    } catch (e) {}
+  }
+  let wakeLock = null;
+  async function keepAwake() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => wakeLock = null); } } catch (e) {}
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && game.phase !== 'idle') keepAwake(); });
+
+  // ---------------- Game state ----------------
+  const game = {
+    phase: 'idle',   // idle | ready | countdown | play | flash | over
+    deck: null, time: Number(store.get(TIME_KEY, 60)) || 60,
+    pool: [], word: '', results: [], endAt: 0, timerId: null,
+    armed: false, uprightSince: 0, countId: null,
+  };
+
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  const poolByDeck = {};
+  function drawWord() {
+    let pool = poolByDeck[game.deck];
+    if (!pool || !pool.length) {
+      const seen = new Set(game.results.map(r => r.word));
+      pool = shuffle(deckWords(game.deck).filter(w => !seen.has(w) && w !== game.word));
+      if (!pool.length) pool = shuffle(deckWords(game.deck).slice());
+      poolByDeck[game.deck] = pool;
+    }
+    return pool.pop();
+  }
+
+  // ---------------- Home screen ----------------
+  function buildHome() {
+    const chips = $('timeChips'); chips.innerHTML = '';
+    TIMES.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (t === game.time ? ' on' : '');
+      b.textContent = t + 's';
+      b.onclick = () => { game.time = t; store.set(TIME_KEY, t); buildHome(); };
+      chips.appendChild(b);
+    });
+    const grid = $('deckGrid'); grid.innerHTML = '';
+    const keys = [...Object.keys(DECKS), 'mix', 'custom'];
+    keys.forEach(k => {
+      const m = deckMeta(k), n = deckWords(k).length;
+      const b = document.createElement('button');
+      b.className = 'deck';
+      b.style.background = m.color;
+      b.innerHTML = `<div class="emoji">${m.emoji}</div><div>${m.name}</div><div class="count">${k === 'custom' ? (n ? n + ' words · tap to edit' : 'Add your own!') : n + ' words'}</div>`;
+      b.onclick = () => k === 'custom' ? openCustom() : pickDeck(k);
+      grid.appendChild(b);
+    });
+  }
+
+  function openCustom() {
+    $('customText').value = customWords().join('\n');
+    show('custom');
+  }
+  $('customBack').onclick = () => { buildHome(); show('home'); };
+  $('customPlay').onclick = () => {
+    const words = $('customText').value.split(/[\n,]/).map(s => s.trim()).filter(Boolean);
+    store.set(CUSTOM_KEY, words.join('\n'));
+    delete poolByDeck.custom;
+    if (!words.length) { $('customText').focus(); return; }
+    pickDeck('custom');
+  };
+
+  function pickDeck(k) {
+    // These must run inside the tap handler (user gesture).
+    audio();
+    requestSensors();
+    goFullscreen();
+    keepAwake();
+    game.deck = k;
+    stage.style.setProperty('--deck-color', deckMeta(k).color);
+    toReady();
+  }
+
+  // ---------------- Ready ----------------
+  function toReady() {
+    game.phase = 'ready';
+    game.uprightSince = 0;
+    $('readyMeter').style.width = '0%';
+    $('readyStatus').textContent = '';
+    show('ready');
+    setTimeout(() => {
+      if (game.phase === 'ready' && !sensorLive()) {
+        $('readyStatus').textContent = 'No tilt sensor found — tap "Start now" and use taps to play.';
+      }
+    }, 1500);
+  }
+  $('readyBack').onclick = () => { game.phase = 'idle'; buildHome(); show('home'); };
+  $('readyGo').onclick = () => startCountdown();
+
+  // ---------------- Orientation of the stage ----------------
+  function setViewportVars() {
+    document.documentElement.style.setProperty('--vw', window.innerWidth + 'px');
+    document.documentElement.style.setProperty('--vh', window.innerHeight + 'px');
+  }
+  window.addEventListener('resize', () => { setViewportVars(); if (game.phase === 'play') fitWord(); });
+  setViewportVars();
+
+  function lockStageRotation() {
+    // If the browser stayed portrait (e.g. rotation lock on) but the phone is held sideways,
+    // rotate the game ourselves so the word reads correctly for the people in front.
+    stage.classList.remove('rot');
+    const portraitWindow = window.innerHeight > window.innerWidth;
+    if (portraitWindow && sensorLive() && Math.abs(tilt.x) > 0.6) {
+      stage.style.setProperty('--rot', tilt.x > 0 ? '90deg' : '-90deg');
+      stage.classList.add('rot');
+    }
+  }
+
+  // ---------------- Countdown ----------------
+  function startCountdown() {
+    if (game.phase !== 'ready') return;
+    game.phase = 'countdown';
+    setViewportVars();
+    lockStageRotation();
+    show('stage'); layer('countLayer');
+    let n = 3;
+    const step = () => {
+      if (game.phase !== 'countdown') return;
+      if (n === 0) { sfx.go(); startRound(); return; }
+      const el = $('countNum');
+      el.textContent = n;
+      el.style.animation = 'none'; void el.offsetWidth; el.style.animation = '';
+      sfx.tick(); buzz(30);
+      n--;
+      game.countId = setTimeout(step, 1000);
+    };
+    step();
+  }
+
+  // ---------------- Round ----------------
+  function startRound() {
+    game.phase = 'play';
+    game.results = [];
+    game.word = '';
+    game.armed = !sensorLive() || Math.abs(tilt.z) < REARM;
+    game.endAt = performance.now() + game.time * 1000;
+    $('hudScore').textContent = '⭐ 0';
+    layer('playLayer');
+    nextWord();
+    let lastSec = -1;
+    clearInterval(game.timerId);
+    game.timerId = setInterval(() => {
+      const left = Math.max(0, Math.ceil((game.endAt - performance.now()) / 1000));
+      if (left !== lastSec) {
+        lastSec = left;
+        const t = $('hudTime');
+        t.textContent = left;
+        t.classList.toggle('low', left <= 5);
+        if (left <= 5 && left > 0 && game.phase === 'play') sfx.low();
+      }
+      if (left <= 0) endRound();
+    }, 100);
+  }
+
+  function nextWord() {
+    game.word = drawWord();
+    $('word').textContent = game.word;
+    fitWord();
+  }
+
+  function fitWord() {
+    const box = $('wordBox'), el = $('word');
+    const w = box.clientWidth, h = box.clientHeight;
+    if (!w || !h) return;
+    let size = Math.min(h * 0.8, w * 0.35);
+    el.style.fontSize = size + 'px';
+    let guard = 60;
+    while (guard-- > 0 && (el.scrollWidth > w || el.offsetHeight > h) && size > 16) {
+      size *= 0.92;
+      el.style.fontSize = size + 'px';
+    }
+  }
+
+  function mark(ok) {
+    if (game.phase !== 'play') return;
+    game.results.push({ word: game.word, ok });
+    game.phase = 'flash';
+    game.armed = false;
+    const score = game.results.filter(r => r.ok).length;
+    $('hudScore').textContent = '⭐ ' + score;
+    const f = $('flash');
+    f.className = 'show ' + (ok ? 'good' : 'pass');
+    $('flashText').textContent = ok ? 'CORRECT!' : 'PASS';
+    $('flashWord').textContent = game.word;
+    if (ok) { sfx.good(); buzz(60); } else { sfx.pass(); buzz([30, 40, 30]); }
+    setTimeout(() => {
+      if (game.phase !== 'flash') return;
+      f.className = '';
+      game.phase = 'play';
+      if (!sensorLive()) game.armed = true;
+      nextWord();
+    }, 750);
+  }
+
+  function onTilt() {
+    if (game.phase === 'ready') {
+      const upright = Math.abs(tilt.z) < 0.35;
+      const now = performance.now();
+      if (upright) {
+        if (!game.uprightSince) game.uprightSince = now;
+        const pct = Math.min(1, (now - game.uprightSince) / 900);
+        $('readyMeter').style.width = (pct * 100) + '%';
+        $('readyStatus').textContent = 'Hold still…';
+        if (pct >= 1) startCountdown();
+      } else {
+        game.uprightSince = 0;
+        $('readyMeter').style.width = '0%';
+        $('readyStatus').textContent = 'Tip the phone up so the screen faces out';
+      }
+      return;
+    }
+    if (game.phase !== 'play') return;
+    if (!game.armed) {
+      if (Math.abs(tilt.z) < REARM) game.armed = true;
+      return;
+    }
+    if (tilt.z < -TRIGGER) mark(true);       // screen toward the floor = got it
+    else if (tilt.z > TRIGGER) mark(false);  // screen toward the sky = pass
+  }
+
+  $('tapGood').onclick = () => mark(true);
+  $('tapPass').onclick = () => mark(false);
+  document.addEventListener('keydown', e => {
+    if (game.phase === 'play') {
+      if (['ArrowDown', 'ArrowRight', ' ', 'Enter'].includes(e.key)) { e.preventDefault(); mark(true); }
+      else if (['ArrowUp', 'ArrowLeft'].includes(e.key)) { e.preventDefault(); mark(false); }
+    } else if (game.phase === 'ready' && (e.key === ' ' || e.key === 'Enter')) {
+      e.preventDefault(); startCountdown();
+    }
+  });
+
+  function endRound() {
+    if (game.phase !== 'play' && game.phase !== 'flash') return;
+    clearInterval(game.timerId);
+    game.phase = 'over';
+    const f = $('flash');
+    f.className = 'show end';
+    $('flashText').textContent = "TIME'S UP!";
+    $('flashWord').textContent = '';
+    sfx.end(); buzz([200, 100, 300]);
+    setTimeout(showResults, 1500);
+  }
+
+  function showResults() {
+    $('flash').className = '';
+    stage.classList.remove('rot');
+    const score = game.results.filter(r => r.ok).length;
+    $('resScore').textContent = score;
+    $('resLbl').textContent = score === 1 ? 'word guessed!' : 'words guessed!';
+    $('resEmoji').textContent = score >= 10 ? '🏆' : score >= 5 ? '🎉' : score >= 1 ? '👏' : '🙈';
+    const list = $('resList'); list.innerHTML = '';
+    game.results.forEach(r => {
+      const d = document.createElement('div');
+      d.className = 'item ' + (r.ok ? 'ok' : 'no');
+      const name = document.createElement('span'); name.textContent = r.word;
+      const mk = document.createElement('span'); mk.textContent = r.ok ? '✅' : '⏭️';
+      d.append(name, mk);
+      list.appendChild(d);
+    });
+    if (!game.results.length) {
+      const d = document.createElement('div');
+      d.className = 'item no'; d.textContent = 'No words this time — try again!';
+      list.appendChild(d);
+    }
+    show('results');
+  }
+
+  $('againBtn').onclick = () => pickDeck(game.deck);
+  $('menuBtn').onclick = () => { game.phase = 'idle'; buildHome(); show('home'); };
+
+  buildHome();
+})();
+</script>
+</body>
+</html>
