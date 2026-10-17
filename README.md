@@ -67,7 +67,7 @@ A space survival game where players pilot a ship through an asteroid field. Dodg
 ### Forehead Guess
 [Play it now](https://code.mattsayar.com/forehead-guess.html)
 
-A phone party game in the style of "guess the word on your forehead." Hold the phone sideways on your forehead while friends give clues. Tilt down when you get it, tilt up to pass. Comes with 9 kid-friendly decks (Animals, Food, Act It Out, and more), an "Everything" mix, and a "My Words" deck you can fill in yourself. Most words show a picture so kids who can't read yet can help give clues. Tilt sensing adapts to how you hold the phone, with Low/Medium/High sensitivity. Pick 30/60/90/120-second rounds, then see which words you got at the end. Taps or arrow keys work if the device has no tilt sensor.
+A phone party game in the style of "guess the word on your forehead." Hold the phone sideways on your forehead while friends give clues. Nod down when you get it, tip back to pass. Over 1,400 kid-friendly words across 22 decks: 12 picture decks where every word has an emoji, so kids who can't read yet can help give clues, plus 10 word decks for readers (charades, famous characters, songs, places, and more). There's also a "My Words" deck you can fill in yourself. Choose how far you have to nod (15°, 25° or 35°) and try it on the built-in tilt tester. Rounds run 30 to 120 seconds, with a recap of your words at the end.
 
 ## Sports Games
 

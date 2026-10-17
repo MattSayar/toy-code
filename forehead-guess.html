@@ -43,11 +43,19 @@
   .title { font-size: clamp(36px, 11vw, 64px); font-weight: 900; margin: 8px 0 2px; letter-spacing: -1px; text-align: center; line-height: 1; }
   .title span { display: inline-block; transform: rotate(-4deg); }
   .subtitle { color: var(--muted); text-align: center; margin: 8px 0 18px; font-size: 15px; max-width: 420px; line-height: 1.4; }
-  .label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 6px 0 8px; align-self: flex-start; width: 100%; max-width: 560px; margin-left: auto; margin-right: auto; }
-  .chips { display: flex; gap: 8px; width: 100%; max-width: 560px; margin-bottom: 18px; }
+  .wrap { width: 100%; max-width: 560px; }
+  .label { font-size: 13px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin: 6px 0 8px; }
+  .section { font-size: 20px; font-weight: 900; margin: 18px 0 2px; }
+  .section-sub { color: var(--muted); font-size: 14px; margin: 0 0 10px; }
+  .chips { display: flex; gap: 8px; width: 100%; margin-bottom: 18px; }
   .chip { flex: 1; padding: 12px 0; border-radius: 14px; background: var(--card); font-weight: 800; font-size: 17px; }
   .chip.on { background: #fff; color: var(--bg); }
-  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; max-width: 560px; }
+  .chip.tall { padding: 10px 4px; display: flex; flex-direction: column; align-items: center; gap: 2px; }
+  .chip .deg { font-size: 13px; font-weight: 700; opacity: .75; }
+  .chip .nod { font-size: 22px; line-height: 1; }
+  .help { color: var(--muted); font-size: 14px; line-height: 1.4; margin: -8px 0 10px; }
+  .linkbtn { background: var(--card); border-radius: 12px; padding: 10px 14px; font-weight: 800; font-size: 15px; margin-bottom: 18px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; width: 100%; }
   @media (min-width: 520px) { .grid { grid-template-columns: repeat(3, 1fr); } }
   .deck {
     border-radius: 20px; padding: 16px 10px 14px;
@@ -80,6 +88,18 @@
   .meter { width: 220px; height: 12px; border-radius: 6px; background: var(--card); overflow: hidden; }
   .meter > div { height: 100%; width: 0; background: #fff; transition: width .1s; }
   .status { font-weight: 800; font-size: 15px; min-height: 20px; }
+
+  /* ---------- Tilt tester ---------- */
+  #tester { gap: 12px; }
+  #tester .chips { max-width: 420px; margin-bottom: 4px; }
+  .gauge { position: relative; width: 120px; height: 300px; max-height: 42vh; border-radius: 20px; background: rgba(255,255,255,.12); overflow: hidden; }
+  .zone { position: absolute; left: 0; right: 0; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 14px; }
+  .zone.pass { top: 0; background: rgba(255,138,31,.85); }
+  .zone.good { bottom: 0; background: rgba(25,194,107,.9); }
+  .gauge .mid { position: absolute; left: 10px; right: 10px; top: 50%; height: 2px; background: rgba(255,255,255,.5); }
+  .gauge .dot { position: absolute; left: 50%; top: 50%; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%; background: #fff; box-shadow: 0 3px 0 rgba(0,0,0,.2); }
+  #testRead { font-size: 26px; font-weight: 900; min-height: 32px; }
+  #testHit { font-size: 22px; font-weight: 900; min-height: 28px; }
 
   /* ---------- Stage (countdown + play), can be rotated ---------- */
   #stage {
@@ -139,29 +159,54 @@
 <!-- HOME -->
 <section id="home" class="screen active">
   <h1 class="title"><span>Forehead</span> <span>Guess!</span></h1>
-  <p class="subtitle">Hold the phone on your forehead. Friends give clues. Tilt <b>down</b> if you got it, tilt <b>up</b> to pass.</p>
+  <p class="subtitle">Hold the phone on your forehead. Friends give clues. Nod <b>down</b> if you got it, tip your head <b>back</b> to pass.</p>
 
-  <div class="label">Round length</div>
-  <div class="chips" id="timeChips"></div>
+  <div class="wrap">
+    <div class="label">Round length</div>
+    <div class="chips" id="timeChips"></div>
 
-  <div class="label">Tilt sensitivity</div>
-  <div class="chips" id="sensChips"></div>
+    <div class="label">How far do you nod?</div>
+    <div class="chips" id="sensChips"></div>
+    <p class="help" id="sensHelp"></p>
+    <button class="linkbtn" id="testBtn">🧪 Test your tilt</button>
 
-  <div class="label">Pictures</div>
-  <div class="chips" id="picChips"></div>
+    <div class="label">Pictures on picture decks</div>
+    <div class="chips" id="picChips"></div>
 
-  <div class="label">Pick a deck to start</div>
-  <div class="grid" id="deckGrid"></div>
+    <div class="section">🖼️ Picture decks</div>
+    <p class="section-sub">Every word has a picture, so little kids who can't read yet can help give clues.</p>
+    <div class="grid" id="picGrid"></div>
+
+    <div class="section">📖 Word decks</div>
+    <p class="section-sub">Words only, for kids who can read.</p>
+    <div class="grid" id="wordGrid"></div>
+  </div>
 
   <div class="howto">
     <b>How to play</b>
     <ol>
       <li>Pick a deck. Hold the phone <b>sideways</b> on your forehead, screen facing your friends.</li>
       <li>Friends act, describe, or make sounds. No saying the word!</li>
-      <li><b>Tilt down</b> (nod) = got it ✅ &nbsp; <b>Tilt up</b> = pass ⏭️</li>
+      <li><b>Nod down</b> (screen toward the floor) = got it ✅ &nbsp; <b>Tip back</b> (screen toward the ceiling) = pass ⏭️</li>
     </ol>
     <div style="margin-top:8px">Tip: on iPhone, turn on <b>Rotation Lock</b> so the screen doesn't flip mid-round. No tilt sensor? Tap the right side for correct, left side to pass.</div>
   </div>
+</section>
+
+<!-- TILT TESTER -->
+<section id="tester" class="screen center">
+  <h2 class="h2">🧪 Test your tilt</h2>
+  <p class="p">Hold the phone on your forehead and nod. You'll hear a <b>ding</b> when it counts as "got it" and a <b>buzz</b> for "pass". A friend can watch the meter.</p>
+  <div class="chips" id="testChips"></div>
+  <div class="gauge">
+    <div class="zone pass" id="zonePass">PASS ⏭️</div>
+    <div class="zone good" id="zoneGood">GOT IT ✅</div>
+    <div class="mid"></div>
+    <div class="dot" id="testDot"></div>
+  </div>
+  <div id="testRead">Hold still…</div>
+  <div id="testHit"></div>
+  <button class="btn" id="testDone">Done</button>
 </section>
 
 <!-- CUSTOM WORDS -->
@@ -224,123 +269,223 @@
 <script>
 (() => {
   // ---------------- Dictionary (kid friendly) ----------------
-  const DECKS = {
-    animals: { name: 'Animals', emoji: '🦁', color: '#f5a623', words: [
-      'Dog','Cat','Elephant','Giraffe','Monkey','Lion','Tiger','Penguin','Kangaroo','Zebra',
-      'Frog','Snake','Rabbit','Horse','Cow','Pig','Duck','Chicken','Owl','Shark',
-      'Whale','Dolphin','Octopus','Turtle','Bear','Panda','Koala','Butterfly','Bee','Spider',
-      'Crocodile','Hippo','Camel','Squirrel','Mouse','Sheep','Goat','Parrot','Flamingo','Peacock',
-      'Snail','Ladybug','Jellyfish','Crab','Gorilla','Deer','Fox','Wolf','Bat','Hamster']},
-    food: { name: 'Yummy Food', emoji: '🍕', color: '#ff5a5f', words: [
-      'Pizza','Ice Cream','Banana','Apple','Spaghetti','Pancakes','Popcorn','Hot Dog','Taco','Cookie',
-      'Cupcake','Watermelon','Carrot','Sandwich','Cheese','Egg','Cereal','Broccoli','Strawberry','Grapes',
-      'Corn on the Cob','Lemon','Chocolate','Birthday Cake','Hamburger','French Fries','Donut','Pretzel','Peanut Butter','Milk',
-      'Orange Juice','Lollipop','Marshmallow','Pickle','Pineapple','Bubble Gum','Soup','Waffles','Muffin','Cotton Candy']},
-    actions: { name: 'Act It Out', emoji: '🕺', color: '#00b8a9', words: [
-      'Jumping','Swimming','Sleeping','Brushing Teeth','Dancing','Sneezing','Crying','Laughing','Clapping','Running',
-      'Climbing','Flying','Driving','Reading','Painting','Singing','Fishing','Skipping','Hopping','Yawning',
-      'Waving','Tickling','Hugging','Cooking','Riding a Bike','Throwing a Ball','Blowing Bubbles','Jumping Rope','Ice Skating','Taking a Photo',
-      'Playing Guitar','Playing Drums','Washing Hands','Tying Shoes','Building a Snowman','Walking a Dog','Flying a Kite','Hula Hoop','Rowing a Boat','Eating Spaghetti']},
-    house: { name: 'At Home', emoji: '🏠', color: '#3d8bfd', words: [
-      'Bed','Chair','Table','Toothbrush','Pillow','Blanket','Lamp','Television','Refrigerator','Bathtub',
-      'Toilet','Sink','Door','Window','Stairs','Couch','Spoon','Fork','Cup','Plate',
-      'Clock','Mirror','Backpack','Book','Crayon','Scissors','Umbrella','Shoes','Socks','Hat',
-      'Pajamas','Teddy Bear','Broom','Vacuum','Washing Machine','Oven','Key','Remote Control','Soap','Towel']},
-    people: { name: 'Jobs & People', emoji: '👩‍🚒', color: '#e05297', words: [
-      'Doctor','Teacher','Firefighter','Police Officer','Chef','Astronaut','Farmer','Pilot','Dentist','Nurse',
-      'Artist','Mail Carrier','Baker','Builder','Bus Driver','Lifeguard','Scientist','Vet','Clown','Magician',
-      'Librarian','Mechanic','Zookeeper','Singer','Dancer','Baby','Grandma','Grandpa','Coach','Cowboy',
-      'Waiter','Photographer','Plumber','Barber','Cashier','Garbage Collector','Superhero','Pirate','King','Queen']},
-    games: { name: 'Sports & Games', emoji: '⚽', color: '#20a33a', words: [
-      'Soccer','Basketball','Baseball','Football','Tennis','Hide and Seek','Tag','Hopscotch','Bowling','Golf',
-      'Skateboard','Karate','Gymnastics','Hockey','Volleyball','Ping Pong','Trampoline','Puzzle','Video Game','Tug of War',
-      'Musical Chairs','Freeze Tag','Simon Says','Kickball','Surfing','Skiing','Sledding','Roller Skates','Dodgeball','Frisbee',
-      'Yo-Yo','Building Blocks','Swing','Slide','Seesaw','Sandcastle','Board Game','Peekaboo','Duck Duck Goose','Water Balloon']},
-    nature: { name: 'Nature & Sky', emoji: '🌈', color: '#1fb5e0', words: [
-      'Sun','Moon','Star','Rain','Snow','Rainbow','Cloud','Thunder','Lightning','Tornado',
-      'Wind','Tree','Flower','Mountain','Volcano','Ocean','River','Beach','Desert','Forest',
-      'Cave','Island','Waterfall','Puddle','Leaf','Rock','Grass','Snowflake','Ice','Campfire',
-      'Sunset','Earth','Planet','Seashell','Mud','Pond','Pinecone','Acorn','Rocket','Comet']},
-    pretend: { name: 'Make Believe', emoji: '🦄', color: '#9b51e0', words: [
-      'Dragon','Unicorn','Mermaid','Pirate Ship','Wizard','Fairy','Princess','Knight','Castle','Giant',
-      'Robot','Alien','Friendly Monster','Ghost','Magic Wand','Treasure Chest','Spaceship','Dinosaur','Troll','Genie',
-      'Crown','Elf','Ninja','Flying Carpet','Time Machine','Gingerbread Man','Snowman','Tooth Fairy','Leprechaun','Gnome',
-      'Sea Monster','Superpower','Magic Carpet Ride','Bigfoot','Talking Animal','Fairy Godmother','Invisible','Treasure Map','Crystal Ball','Golden Egg']},
-    vehicles: { name: 'Things That Go', emoji: '🚒', color: '#ef6c00', words: [
-      'Car','Bus','Train','Airplane','Helicopter','Boat','Bicycle','Motorcycle','Fire Truck','Ambulance',
-      'Police Car','Tractor','Rocket Ship','Submarine','School Bus','Taxi','Garbage Truck','Scooter','Hot Air Balloon','Sailboat',
-      'Canoe','Monster Truck','Race Car','Ice Cream Truck','Dump Truck','Bulldozer','Crane','Tow Truck','Wagon','Tricycle',
-      'Roller Coaster','Jet Ski','Skateboard','Pirate Ship','Spaceship','Cable Car','Steam Train','Kayak','Unicycle','Golf Cart']},
+  // Picture decks: every entry is "Word=emoji", so every card shows a picture.
+  // Word decks: plain words for kids who can read.
+  const PICTURE_DECKS = {
+    animals: { name: 'Animals', emoji: '🐶', color: '#f5a623', list: `
+      Dog=🐶, Cat=🐱, Black Cat=🐈‍⬛, Poodle=🐩, Mouse=🐭, Hamster=🐹, Rabbit=🐰, Fox=🦊, Bear=🐻, Polar Bear=🐻‍❄️,
+      Panda=🐼, Koala=🐨, Tiger=🐯, Lion=🦁, Leopard=🐆, Cow=🐮, Ox=🐂, Water Buffalo=🐃, Bison=🦬, Pig=🐷,
+      Boar=🐗, Frog=🐸, Monkey=🐒, Gorilla=🦍, Orangutan=🦧, Chicken=🐔, Rooster=🐓, Baby Chick=🐤, Penguin=🐧, Bird=🐦,
+      Duck=🦆, Eagle=🦅, Owl=🦉, Bat=🦇, Wolf=🐺, Horse=🐴, Zebra=🦓, Deer=🦌, Camel=🐫, Llama=🦙,
+      Giraffe=🦒, Elephant=🐘, Woolly Mammoth=🦣, Rhino=🦏, Hippo=🦛, Goat=🐐, Sheep=🐑, Ram=🐏, Squirrel=🐿️, Beaver=🦫,
+      Hedgehog=🦔, Sloth=🦥, Otter=🦦, Skunk=🦨, Kangaroo=🦘, Badger=🦡, Raccoon=🦝, Turkey=🦃, Dove=🕊️, Swan=🦢,
+      Flamingo=🦩, Peacock=🦚, Parrot=🦜, Dodo Bird=🦤, Crocodile=🐊, Turtle=🐢, Lizard=🦎, Snake=🐍, T-Rex=🦖, Long-Neck Dinosaur=🦕,
+      Whale=🐳, Dolphin=🐬, Seal=🦭, Fish=🐟, Tropical Fish=🐠, Pufferfish=🐡, Shark=🦈, Octopus=🐙, Crab=🦀, Lobster=🦞,
+      Shrimp=🦐, Squid=🦑, Snail=🐌, Butterfly=🦋, Caterpillar=🐛, Ant=🐜, Bee=🐝, Beetle=🪲, Ladybug=🐞, Cricket=🦗,
+      Spider=🕷️, Spider Web=🕸️, Scorpion=🦂, Mosquito=🦟, Worm=🪱, Paw Prints=🐾` },
+    food: { name: 'Yummy Food', emoji: '🍕', color: '#ff5a5f', list: `
+      Apple=🍎, Green Apple=🍏, Pear=🍐, Orange=🍊, Lemon=🍋, Banana=🍌, Watermelon=🍉, Grapes=🍇, Strawberry=🍓, Blueberries=🫐,
+      Melon=🍈, Cherries=🍒, Peach=🍑, Mango=🥭, Pineapple=🍍, Coconut=🥥, Kiwi=🥝, Tomato=🍅, Eggplant=🍆, Avocado=🥑,
+      Broccoli=🥦, Lettuce=🥬, Cucumber=🥒, Hot Pepper=🌶️, Bell Pepper=🫑, Corn=🌽, Carrot=🥕, Olive=🫒, Garlic=🧄, Onion=🧅,
+      Potato=🥔, Sweet Potato=🍠, Peanuts=🥜, Mushroom=🍄, Chestnut=🌰, Bread=🍞, Croissant=🥐, Baguette=🥖, Pretzel=🥨, Bagel=🥯,
+      Pancakes=🥞, Waffle=🧇, Cheese=🧀, Meat on a Bone=🍖, Chicken Leg=🍗, Steak=🥩, Bacon=🥓, Hamburger=🍔, French Fries=🍟, Pizza=🍕,
+      Hot Dog=🌭, Sandwich=🥪, Taco=🌮, Burrito=🌯, Tamale=🫔, Falafel=🧆, Egg=🥚, Fried Egg=🍳, Soup=🍲, Fondue=🫕,
+      Cereal=🥣, Salad=🥗, Popcorn=🍿, Butter=🧈, Salt=🧂, Canned Soup=🥫, Lunch Box=🍱, Rice Ball=🍙, Rice=🍚, Curry=🍛,
+      Noodles=🍜, Spaghetti=🍝, Sushi=🍣, Fried Shrimp=🍤, Dumpling=🥟, Fortune Cookie=🥠, Moon Cake=🥮, Ice Cream Cone=🍦, Snow Cone=🍧, Ice Cream Sundae=🍨,
+      Donut=🍩, Cookie=🍪, Birthday Cake=🎂, Slice of Cake=🍰, Cupcake=🧁, Pie=🥧, Chocolate Bar=🍫, Candy=🍬, Lollipop=🍭, Pudding=🍮,
+      Honey=🍯, Milk=🥛, Baby Bottle=🍼, Hot Cocoa=☕, Tea=🍵, Teapot=🫖, Juice Box=🧃, Soda=🥤, Bubble Tea=🧋, Ice Cube=🧊,
+      Chopsticks=🥢, Kebab=🍢, Pickle Jar=🫙` },
+    actions: { name: 'Act It Out', emoji: '🕺', color: '#00b8a9', list: `
+      Running=🏃, Walking=🚶, Dancing=💃, Swimming=🏊, Surfing=🏄, Rock Climbing=🧗, Cartwheel=🤸, Juggling=🤹, Lifting Weights=🏋️, Riding a Bike=🚴,
+      Skiing=⛷️, Snowboarding=🏂, Rowing a Boat=🚣, Riding a Horse=🏇, Sword Fighting=🤺, Bowing=🙇, Shrugging=🤷, Facepalm=🤦, Raising Your Hand=🙋, Waving=👋,
+      Clapping=👏, Thumbs Up=👍, Flexing Muscles=💪, Writing=✍️, Taking a Selfie=🤳, Painting Nails=💅, Getting a Haircut=💇, Sleeping=😴, Yawning=🥱, Sneezing=🤧,
+      Laughing=😂, Crying=😭, Blowing a Kiss=😘, Hugging=🤗, Thinking=🤔, Shhh!=🤫, Eating Spaghetti=🍝, Drinking a Milkshake=🥤, Cooking=🍳, Reading=📖,
+      Painting=🎨, Singing=🎤, Fishing=🎣, Driving=🚗, Brushing Teeth=🪥, Washing Hands=🧼, Taking a Photo=📸, Playing Guitar=🎸, Playing Drums=🥁, Playing Piano=🎹,
+      Talking on the Phone=📞, Building a Snowman=⛄, Flying a Kite=🪁, Bowling=🎳, Kicking a Ball=⚽, Shooting Hoops=🏀, Ice Skating=⛸️, Taking a Bath=🛀, Taking a Shower=🚿, Sweeping=🧹,
+      Hammering=🔨, Blowing Out Candles=🎂, Blowing Bubbles=🫧, Meditating=🧘, Mind Blown=🤯, Popping a Balloon=🎈, Opening a Present=🎁, Playing Video Games=🎮, Brushing a Horse=🐴, Walking a Dog=🐕,
+      Digging=⛏️, Climbing a Mountain=🏔️, Camping=🏕️, Playing Tennis=🎾, Boxing=🥊` },
+    vehicles: { name: 'Things That Go', emoji: '🚒', color: '#ef6c00', list: `
+      Car=🚗, Taxi=🚕, Jeep=🚙, Bus=🚌, Trolley Bus=🚎, Race Car=🏎️, Police Car=🚓, Ambulance=🚑, Fire Truck=🚒, Minivan=🚐,
+      Pickup Truck=🛻, Delivery Truck=🚚, Big Truck=🚛, Tractor=🚜, Motorcycle=🏍️, Scooter=🛴, Moped=🛵, Bicycle=🚲, Skateboard=🛹, Roller Skates=🛼,
+      Train=🚆, Steam Train=🚂, Bullet Train=🚄, Subway=🚇, Tram=🚊, Monorail=🚝, Train Car=🚃, Helicopter=🚁, Airplane=✈️, Small Plane=🛩️,
+      Parachute=🪂, Rocket=🚀, Flying Saucer=🛸, Satellite=🛰️, Sailboat=⛵, Canoe=🛶, Speedboat=🚤, Cruise Ship=🚢, Ferry=⛴️, Motor Boat=🛥️,
+      Cable Car=🚡, Ski Lift=🚠, Roller Coaster=🎢, Ferris Wheel=🎡, Merry-Go-Round=🎠, Tire=🛞, Traffic Light=🚦, Stop Sign=🛑, Gas Pump=⛽, Anchor=⚓,
+      Construction Crane=🏗️, Railroad Track=🛤️, Life Ring=🛟` },
+    nature: { name: 'Nature & Sky', emoji: '🌈', color: '#1fb5e0', list: `
+      Sun=☀️, Moon=🌙, Full Moon=🌕, Star=⭐, Shooting Star=🌠, Comet=☄️, Planet=🪐, Earth=🌍, Milky Way=🌌, Cloud=☁️,
+      Rain=🌧️, Snow=🌨️, Thunderstorm=⛈️, Lightning=⚡, Tornado=🌪️, Fog=🌫️, Wind=💨, Rainbow=🌈, Snowflake=❄️, Snowman=⛄,
+      Fire=🔥, Water Drop=💧, Ocean Wave=🌊, Volcano=🌋, Mountain=⛰️, Snowy Mountain=🏔️, Beach=🏖️, Desert=🏜️, Island=🏝️, Waterfall=🏞️,
+      Sunrise=🌄, Sunset=🌅, Tree=🌳, Pine Tree=🌲, Palm Tree=🌴, Cactus=🌵, Seedling=🌱, Four-Leaf Clover=🍀, Maple Leaf=🍁, Fallen Leaves=🍂,
+      Leaves Blowing=🍃, Herbs=🌿, Cherry Blossom=🌸, Rose=🌹, Sunflower=🌻, Tulip=🌷, Hibiscus=🌺, Bouquet=💐, Rock=🪨, Log=🪵,
+      Seashell=🐚, Coral=🪸, Feather=🪶, Thermometer=🌡️, Umbrella in the Rain=☔, Crescent Moon=🌛, Sun with Face=🌞, Night City=🌃, Bubbles=🫧` },
+    play: { name: 'Sports & Play', emoji: '⚽', color: '#20a33a', list: `
+      Soccer=⚽, Basketball=🏀, Football=🏈, Baseball=⚾, Softball=🥎, Tennis=🎾, Volleyball=🏐, Rugby=🏉, Bowling=🎳, Cricket Bat=🏏,
+      Field Hockey=🏑, Ice Hockey=🏒, Lacrosse=🥍, Ping Pong=🏓, Badminton=🏸, Boxing Glove=🥊, Karate=🥋, Goal=🥅, Golf=⛳, Ice Skate=⛸️,
+      Fishing Pole=🎣, Snorkel=🤿, Skis=🎿, Sled=🛷, Curling=🥌, Snowboarder=🏂, Surfer=🏄, Swimmer=🏊, Weightlifter=🏋️, Cyclist=🚴,
+      Mountain Biking=🚵, Gymnast=🤸, Wrestling=🤼, Water Polo=🤽, Handball=🤾, Juggler=🤹, Horse Racing=🏇, Fencing=🤺, Trophy=🏆, Gold Medal=🥇,
+      Bullseye=🎯, Yo-Yo=🪀, Kite=🪁, Pool Ball=🎱, Video Game=🎮, Joystick=🕹️, Dice=🎲, Puzzle Piece=🧩, Teddy Bear=🧸, Piñata=🪅,
+      Nesting Dolls=🪆, Chess=♟️, Playing Cards=🃏, Frisbee=🥏, Boomerang=🪃, Playground Slide=🛝, Circus Tent=🎪, Magic Trick=🪄, Medal=🏅, Checkered Flag=🏁` },
+    home: { name: 'Around the House', emoji: '🏠', color: '#3d8bfd', list: `
+      House=🏠, Door=🚪, Window=🪟, Bed=🛏️, Couch=🛋️, Chair=🪑, Toilet=🚽, Bathtub=🛁, Shower=🚿, Toilet Paper=🧻,
+      Toothbrush=🪥, Soap=🧼, Sponge=🧽, Mirror=🪞, Broom=🧹, Bucket=🪣, Laundry Basket=🧺, Plunger=🪠, Mouse Trap=🪤, Key=🔑,
+      Lock=🔒, Light Bulb=💡, Candle=🕯️, Flashlight=🔦, Alarm Clock=⏰, Hourglass=⌛, Cell Phone=📱, Telephone=☎️, Laptop=💻, Keyboard=⌨️,
+      Printer=🖨️, Television=📺, Camera=📷, Radio=📻, Battery=🔋, Plug=🔌, Magnet=🧲, Hammer=🔨, Wrench=🔧, Screwdriver=🪛,
+      Saw=🪚, Ladder=🪜, Scissors=✂️, Paperclip=📎, Pencil=✏️, Crayon=🖍️, Paintbrush=🖌️, Book=📕, Books=📚, Newspaper=📰,
+      Envelope=✉️, Mailbox=📫, Gift=🎁, Backpack=🎒, Umbrella=☂️, Glasses=👓, Fork and Knife=🍴, Spoon=🥄, Plate=🍽️, Coffee Mug=☕,
+      Kitchen Knife=🔪, Fire Extinguisher=🧯, Thread=🧵, Yarn=🧶, Safety Pin=🧷, Bell=🔔, Trash Can=🗑️, Microscope=🔬, Telescope=🔭, Calendar=📅,
+      Package=📦, Lamp=🪔, Shopping Cart=🛒, Ruler=📏, Pushpin=📌, Puzzle=🧩, Teddy Bear=🧸, Balloon=🎈, Fishbowl=🐠, Piggy Bank=🐷` },
+    people: { name: 'People & Jobs', emoji: '🧑‍🚒', color: '#e05297', list: `
+      Baby=👶, Kid=🧒, Grandma=👵, Grandpa=👴, Family=👪, Doctor=🧑‍⚕️, Teacher=🧑‍🏫, Firefighter=🧑‍🚒, Police Officer=👮, Chef=🧑‍🍳,
+      Astronaut=🧑‍🚀, Farmer=🧑‍🌾, Pilot=🧑‍✈️, Scientist=🧑‍🔬, Artist=🧑‍🎨, Rock Star=🧑‍🎤, Mechanic=🧑‍🔧, Factory Worker=🧑‍🏭, Office Worker=🧑‍💼, Computer Coder=🧑‍💻,
+      Judge=🧑‍⚖️, Graduate=🧑‍🎓, Construction Worker=👷, Royal Guard=💂, Detective=🕵️, Santa Claus=🎅, Mrs. Claus=🤶, Princess=👸, Prince=🤴, Superhero=🦸,
+      Supervillain=🦹, Ninja=🥷, Cowboy=🤠, Clown=🤡, Pirate=🏴‍☠️, Ballerina=🩰, Bride=👰, Groom=🤵, Mermaid=🧜‍♀️, Wizard=🧙,
+      Dentist=🦷, Mail Carrier=📮, Photographer=📸, Barber=💈, Magician=🎩, Baker=🥖, Lifeguard=🛟, Musician=🎼, Pharmacist=💊, Zookeeper=🦓,
+      Gardener=🌻, Fisher=🎣, Painter=🖌️, Referee=🏁, Waiter=🍽️` },
+    faces: { name: 'Faces & Feelings', emoji: '😜', color: '#f2c200', list: `
+      Happy=😀, Laughing=😂, Rolling on the Floor Laughing=🤣, Smiling=😊, Winking=😉, In Love=😍, Kissing=😘, Silly=🤪, Tongue Out=😛, Money Face=🤑,
+      Hugging=🤗, Shushing=🤫, Thinking=🤔, Zipped Mouth=🤐, Eye Roll=🙄, Sleeping=😴, Yawning=🥱, Drooling=🤤, Sick=🤒, Ouch!=🤕,
+      Yucky=🤮, Sneezing=🤧, Too Hot=🥵, Freezing Cold=🥶, Dizzy=😵, Mind Blown=🤯, Party Face=🥳, Cool Sunglasses=😎, Nerdy=🤓, Confused=😕,
+      Worried=😟, Surprised=😮, Shocked=😲, Embarrassed=😳, Puppy Dog Eyes=🥺, Scared=😨, Screaming=😱, Crying=😭, Sad=😢, Grumpy=😤,
+      Angry=😠, Super Angry=😡, Melting=🫠, Poop=💩, See No Evil=🙈, Hear No Evil=🙉, Speak No Evil=🙊, Heart=❤️, Broken Heart=💔, Thumbs Down=👎,
+      Fist Bump=👊, Hooray=🙌, Peace Sign=✌️, Fingers Crossed=🤞, Pointing=👉, Eyes=👀, Ear=👂, Nose=👃, Lips=👄, Tongue=👅,
+      Tooth=🦷, Brain=🧠, Bone=🦴, Hand=✋, Foot=🦶, Leg=🦵, Footprints=👣, Muscles=💪, Lungs=🫁, Upside-Down Face=🙃` },
+    clothes: { name: 'Clothes & Dress-Up', emoji: '👗', color: '#c2185b', list: `
+      T-Shirt=👕, Jeans=👖, Dress=👗, Shirt and Tie=👔, Scarf=🧣, Gloves=🧤, Coat=🧥, Socks=🧦, Swimsuit=🩱, Shorts=🩳,
+      Underwear=🩲, Kimono=👘, Dress Shoe=👞, Sneaker=👟, High Heel=👠, Sandal=👡, Boot=👢, Ballet Shoes=🩰, Hiking Boot=🥾, Flip-Flops=🩴,
+      Baseball Cap=🧢, Top Hat=🎩, Graduation Cap=🎓, Crown=👑, Helmet=⛑️, Sunglasses=🕶️, Goggles=🥽, Lab Coat=🥼, Safety Vest=🦺, Purse=👛,
+      Handbag=👜, Ring=💍, Lipstick=💄, Bow=🎀, Gem=💎, Watch=⌚, Backpack=🎒, Glasses=👓, Cowboy Hat=🤠, Mask=🎭,
+      Woman's Hat=👒, Briefcase=💼, Shopping Bags=🛍️, Military Helmet=🪖, Nail Polish=💅` },
+    party: { name: 'Party & Music', emoji: '🎉', color: '#ff4d8d', list: `
+      Balloon=🎈, Party Popper=🎉, Confetti=🎊, Present=🎁, Birthday Cake=🎂, Fireworks=🎆, Sparkler=🎇, Jack-o'-Lantern=🎃, Christmas Tree=🎄, Valentine=💝,
+      Firecracker=🧨, Ticket=🎟️, Microphone=🎤, Headphones=🎧, Music Notes=🎶, Piano=🎹, Guitar=🎸, Violin=🎻, Trumpet=🎺, Saxophone=🎷,
+      Drum=🥁, Banjo=🪕, Accordion=🪗, Movie Camera=🎥, Clapperboard=🎬, Theater Masks=🎭, Art Palette=🎨, Red Envelope=🧧, Paper Lantern=🏮, Menorah=🕎,
+      Diya Lamp=🪔, Wedding Chapel=💒, Trophy=🏆, Piñata=🪅, Party Hat=🥳, Ghost=👻, Santa=🎅, Snowman=⛄, Bunny=🐰, Turkey=🦃,
+      Shamrock=☘️, Ribbon=🎀, Bell=🔔, Candy=🍬, Cupcake=🧁, Ice Cream=🍦, Popcorn=🍿, Circus=🎪, Kite=🪁, Pumpkin=🎃` },
+    pretend: { name: 'Make Believe', emoji: '🦄', color: '#9b51e0', list: `
+      Unicorn=🦄, Dragon=🐉, Mermaid=🧜‍♀️, Fairy=🧚, Wizard=🧙, Genie=🧞, Elf=🧝, Vampire=🧛, Troll=🧌, Ghost=👻,
+      Alien=👽, Space Invader=👾, Robot=🤖, Castle=🏰, Crown=👑, Magic Wand=🪄, Crystal Ball=🔮, Bag of Gold=💰, Treasure Map=🗺️, Sword Fight=⚔️,
+      Shield=🛡️, Bow and Arrow=🏹, Magic Potion=🧪, Flying Saucer=🛸, Rocket Ship=🚀, Superhero=🦸, Ninja=🥷, Princess=👸, Prince=🤴, Pirate=🏴‍☠️,
+      Santa Claus=🎅, T-Rex=🦖, Rainbow=🌈, Shooting Star=🌠, Haunted House=🏚️, Magic Lamp=🪔, Gem=💎, Jack-o'-Lantern=🎃, Merman=🧜‍♂️, Supervillain=🦹,
+      Clown=🤡, Moon=🌙, Lucky Clover=🍀, Spider Web=🕸️, Bat=🦇, Owl=🦉, Snowman=⛄, Time Machine=⏳, Teddy Bear=🧸, Puppet Show=🎭` },
   };
+
+  const WORD_DECKS = {
+    charades: { name: 'Charades', emoji: '🎭', color: '#00897b', list: `
+      Jumping Rope, Hula Hoop, Tickling, Hopscotch, Brushing Hair, Tying Shoes, Climbing a Ladder, Making a Sandwich, Walking a Tightrope, Riding an Elevator,
+      Carving a Pumpkin, Flipping Pancakes, Mowing the Lawn, Washing a Car, Walking on the Moon, Being a Statue, Hiding Under the Bed, Catching a Butterfly, Scuba Diving, Changing a Diaper,
+      Feeding a Baby, Eating Corn on the Cob, Licking an Ice Cream Cone, Stepping on Gum, Slipping on a Banana Peel, Getting Stung by a Bee, Losing a Tooth, Putting on Sunscreen, Building a Sandcastle, Playing Hide and Seek,
+      Doing Homework, Milking a Cow, Riding a Roller Coaster, Jumping on a Trampoline, Doing a Puzzle, Making Your Bed, Setting the Table, Doing Laundry, Vacuuming, Painting a Wall,
+      Watering Plants, Raking Leaves, Shoveling Snow, Snowball Fight, Making a Snow Angel, Sledding Down a Hill, Doing Jumping Jacks, Doing Push-Ups, Hula Dancing, Doing the Robot,
+      Moonwalking, Tug of War, Pushing a Shopping Cart, Hailing a Taxi, Waiting in Line, Sneaking Past a Sleeping Dog, Being a Monkey, Being a Chicken, Being a T-Rex, Being a Penguin,
+      Being a Snake, Being a Kangaroo, Being an Elephant, Peeling a Banana, Opening a Jar, Blowing Up a Balloon, Chewing Gum, Eating a Hot Pepper, Smelling Something Stinky, Petting a Cat,
+      Throwing a Frisbee, Swinging on a Swing, Going Down a Slide, Playing Leapfrog, Spinning in Circles, Marching in a Parade, Conducting an Orchestra, Lifting Something Heavy, Pulling a Wagon, Riding a Pony,
+      Taking Out the Trash, Washing the Dishes, Folding Laundry, Making Pizza, Stirring Soup, Cracking an Egg, Pouring Cereal, Brushing a Dog, Giving a Hug, Tiptoeing` },
+    places: { name: 'Places', emoji: '🗺️', color: '#5c6bc0', list: `
+      School, Library, Zoo, Playground, Park, Beach, Swimming Pool, Grocery Store, Hospital, Airport,
+      Train Station, Bakery, Restaurant, Movie Theater, Museum, Aquarium, Farm, Barn, Castle, Jungle,
+      Desert, North Pole, Outer Space, The Moon, Bowling Alley, Ice Rink, Circus, Amusement Park, Water Park, Campground,
+      Fire Station, Police Station, Post Office, Bank, Gas Station, Car Wash, Pizza Place, Ice Cream Shop, Toy Store, Pet Store,
+      Doctor's Office, Dentist's Office, Hair Salon, Gym, Stadium, Kitchen, Bathroom, Bedroom, Backyard, Treehouse,
+      Attic, Basement, Garage, Lighthouse, Island, Cave, Volcano, Igloo, Haunted House, Pirate Ship,
+      Submarine, Classroom, Cafeteria, Rainforest, Ocean, Mountain Top, Bridge, Skyscraper, Tent, Farmers Market,
+      Shopping Mall, Bus Stop, Parking Lot, Construction Site, Science Lab, Art Studio, Fair, Petting Zoo, Bounce House, Laundromat` },
+    school: { name: 'School Day', emoji: '🏫', color: '#8d6e63', list: `
+      Teacher, Principal, Lunchbox, Recess, Homework, Spelling Test, Pencil Sharpener, Eraser, Glue Stick, Ruler,
+      Markers, Notebook, Whiteboard, Chalk, Desk, Locker, School Bus, Field Trip, Show and Tell, Fire Drill,
+      Gym Class, Art Class, Music Class, Library Card, Lunch Line, Report Card, Calculator, Globe, Alphabet, Math,
+      Science Fair, Spelling Bee, Hall Pass, Snack Time, Nap Time, Story Time, Swing Set, Jungle Gym, Monkey Bars, Graduation,
+      Class Pet, Field Day, Picture Day, Summer Vacation, Snow Day, First Day of School, Crossing Guard, Bus Driver, Hand Sanitizer, Permission Slip,
+      Pencil Case, Highlighter, Stapler, Tape, Construction Paper, Finger Paint, Glitter, Sticker Chart, Gold Star, Book Report,
+      Times Tables, Counting, Coloring, Cubby, Classroom Rules, Line Leader, Quiet Voice, Tablet, Map, Microscope` },
+    characters: { name: 'Famous Characters', emoji: '🦸', color: '#d32f2f', list: `
+      Mickey Mouse, Minnie Mouse, Donald Duck, Goofy, Elsa, Anna, Olaf, Moana, Simba, Winnie the Pooh,
+      Tigger, Buzz Lightyear, Woody, Nemo, Dory, Lightning McQueen, Shrek, Spider-Man, Batman, Superman,
+      Wonder Woman, The Hulk, Captain America, Iron Man, SpongeBob, Patrick Star, Peppa Pig, Bluey, Bingo, Elmo,
+      Cookie Monster, Big Bird, Kermit the Frog, Mario, Luigi, Princess Peach, Yoshi, Sonic the Hedgehog, Pikachu, Paddington Bear,
+      Curious George, Clifford the Big Red Dog, Dora the Explorer, Scooby-Doo, Garfield, Snoopy, Charlie Brown, Bugs Bunny, The Grinch, Rudolph,
+      Frosty the Snowman, Easter Bunny, Tooth Fairy, Cinderella, Snow White, Rapunzel, Ariel, Belle, Peter Pan, Tinker Bell,
+      Captain Hook, Pinocchio, Dumbo, Mulan, Stitch, Minions, The Cat in the Hat, Mary Poppins, Willy Wonka, Humpty Dumpty,
+      Little Red Riding Hood, Goldilocks, Big Bad Wolf, Gingerbread Man, Pac-Man, Daniel Tiger, Marshall from Paw Patrol, Chase from Paw Patrol, Thomas the Tank Engine, Barbie,
+      Ken, Baby Yoda, Darth Vader, Kung Fu Panda, Puss in Boots, Elastigirl, Mike Wazowski, Sully, Remy the Rat, WALL-E` },
+    shows: { name: 'Movies & Shows', emoji: '🎬', color: '#455a64', list: `
+      Frozen, Toy Story, Finding Nemo, The Lion King, Moana, Encanto, Coco, Cars, Inside Out, Up,
+      Shrek, Despicable Me, Kung Fu Panda, Madagascar, Zootopia, Monsters Inc, The Incredibles, Ratatouille, Aladdin, Beauty and the Beast,
+      The Little Mermaid, Cinderella, Tangled, Brave, Turning Red, Luca, Trolls, Sing, The Secret Life of Pets, How to Train Your Dragon,
+      The Lego Movie, Paw Patrol, Bluey, Peppa Pig, Sesame Street, Paddington, Mary Poppins, The Wizard of Oz, Star Wars, The Muppets,
+      Wild Kratts, Daniel Tiger's Neighborhood, Octonauts, Pokémon, The Magic School Bus, Arthur, SpongeBob SquarePants, Super Mario Bros, Wish, Elemental,
+      Minecraft, Charlotte's Web, Winnie the Pooh, The Jungle Book, Dumbo, Peter Pan, Lilo and Stitch, Mulan, Hotel Transylvania, Ice Age` },
+    songs: { name: 'Songs & Rhymes', emoji: '🎵', color: '#7b1fa2', list: `
+      Twinkle Twinkle Little Star, Old MacDonald, Baby Shark, The Wheels on the Bus, Itsy Bitsy Spider, Happy Birthday, Row Row Row Your Boat, Mary Had a Little Lamb, Humpty Dumpty, Jack and Jill,
+      Hickory Dickory Dock, Head Shoulders Knees and Toes, If You're Happy and You Know It, The Hokey Pokey, Ring Around the Rosie, London Bridge, Five Little Monkeys, B-I-N-G-O, Baa Baa Black Sheep, Rock-a-Bye Baby,
+      The ABC Song, Hot Cross Buns, Pop Goes the Weasel, Jingle Bells, Rudolph the Red-Nosed Reindeer, Let It Go, You Are My Sunshine, This Old Man, The Ants Go Marching, Five Little Ducks,
+      Old King Cole, Little Bo Peep, Hey Diddle Diddle, Little Miss Muffet, Pat-a-Cake, Do Your Ears Hang Low, Skip to My Lou, Yankee Doodle, Down by the Bay, The Farmer in the Dell,
+      I'm a Little Teapot, Three Blind Mice, Are You Sleeping Brother John, Shake Your Sillies Out, The Muffin Man, Itsy Bitsy Teenie Weenie, Five Green and Speckled Frogs, Ten in the Bed, Mulberry Bush, Frosty the Snowman` },
+    stuff: { name: 'Stuff & Things', emoji: '🧸', color: '#6d4c41', list: `
+      Pillow, Blanket, Refrigerator, Sink, Stairs, Vacuum, Washing Machine, Oven, Remote Control, Towel,
+      Pajamas, Trampoline, Swing, Seesaw, Sandbox, Bunk Bed, Night Light, Microwave, Toaster, Blender,
+      Dishwasher, Doorbell, Ceiling Fan, Garden Hose, Wheelbarrow, Lawn Mower, Jigsaw Puzzle, Coloring Book, Sticker, Stuffed Animal,
+      Bubble Wrap, Rubber Duck, Water Bottle, Sleeping Bag, Pool Noodle, Beach Ball, Sunscreen, Band-Aid, Wagon, Jump Rope,
+      Play-Doh, Slime, Legos, Marbles, Snow Globe, Jack-in-the-Box, Rocking Chair, Hammock, Bird Feeder, Fence,
+      Chimney, Doghouse, Curtains, Rug, Bookshelf, Toy Box, High Chair, Stroller, Car Seat, Crib,
+      Bib, Pacifier, Diaper, Bath Toys, Shampoo, Hair Dryer, Comb, Hairbrush, Tooth Paste, Dental Floss,
+      Light Switch, Smoke Alarm, Thermostat, Doormat, Welcome Sign, Flower Pot, Watering Can, Shovel, Rake, Tool Box` },
+    wild: { name: 'Wild & Weird Animals', emoji: '🦓', color: '#558b2f', list: `
+      Jellyfish, Moose, Platypus, Armadillo, Walrus, Narwhal, Starfish, Seahorse, Stingray, Porcupine,
+      Chipmunk, Mole, Opossum, Lemur, Chameleon, Iguana, Toucan, Pelican, Ostrich, Emu,
+      Woodpecker, Hummingbird, Goose, Donkey, Pony, Puppy, Kitten, Guinea Pig, Goldfish, Tadpole,
+      Salamander, Alligator, Komodo Dragon, Cheetah, Jaguar, Panther, Hyena, Meerkat, Warthog, Anteater,
+      Manatee, Sea Turtle, Orca, Clownfish, Grizzly Bear, Mountain Goat, Firefly, Dragonfly, Grasshopper, Moth,
+      Centipede, Tarantula, Bald Eagle, Seagull, Crow, Robin, Blue Jay, Cardinal, Hawk, Vulture,
+      Bunny, Ferret, Gerbil, Hermit Crab, Sea Lion, Puffin, Yak, Reindeer, Elk, Coyote,
+      Pig in Mud, Barn Owl, Bullfrog, Tree Frog, Rattlesnake, Python, Gecko, Tortoise, Catfish, Swordfish` },
+    meals: { name: 'Snacks & Meals', emoji: '🥪', color: '#e64a19', list: `
+      Marshmallow, Cotton Candy, Bubble Gum, Muffin, Peanut Butter and Jelly, Mac and Cheese, Chicken Nuggets, Grilled Cheese, Meatballs, Lasagna,
+      Nachos, Quesadilla, Corn Dog, Mashed Potatoes, Gravy, Pickle, Applesauce, Yogurt, Oatmeal, Granola Bar,
+      Fish Crackers, Smoothie, Milkshake, Popsicle, Gummy Bears, Jelly Beans, Candy Cane, S'mores, Brownie, Cheesecake,
+      Apple Pie, Pumpkin Pie, Sprinkles, Whipped Cream, Ketchup, Mustard, Maple Syrup, Toast, French Toast, Cinnamon Roll,
+      Fruit Salad, Raisins, Celery, Peas, Green Beans, Spinach, Cauliflower, Brussels Sprouts, Zucchini, Lime,
+      Raspberry, Cantaloupe, Grapefruit, Pomegranate, Hot Sauce, Jell-O, Caramel Apple, Chocolate Milk, Pizza Bagel, Fish Sticks,
+      Tater Tots, Onion Rings, Chicken Noodle Soup, Fried Rice, Pot Pie, Meatloaf, Hard-Boiled Egg, Scrambled Eggs, Breakfast Burrito, String Cheese,
+      Fruit Snacks, Animal Crackers, Graham Crackers, Pudding Cup, Ice Pop, Lemonade, Hot Fudge, Banana Split, Root Beer Float, Birthday Cupcake` },
+    holidays: { name: 'Holidays & Seasons', emoji: '🎃', color: '#f57c00', list: `
+      Birthday, Christmas, Halloween, Thanksgiving, Easter, Valentine's Day, New Year's Eve, Fourth of July, Hanukkah, Diwali,
+      Lunar New Year, St. Patrick's Day, Mother's Day, Father's Day, Earth Day, April Fools' Day, Trick or Treat, Costume, Pumpkin Patch, Hayride,
+      Candy Corn, Stocking, Reindeer, Elf on the Shelf, Gingerbread House, Snowball, Ornament, Wreath, Easter Egg Hunt, Easter Basket,
+      Fireworks, Parade, Picnic, Summer, Winter, Spring, Fall, Beach Day, Leaf Pile, Hot Chocolate,
+      Sprinkler, Lemonade Stand, Snow Fort, Mittens, Rain Boots, Puddle Jumping, Spring Flowers, Back to School, Sleepover, Camping Trip,
+      Road Trip, Family Reunion, Birthday Party, Wrapping Paper, Thank You Card, Mistletoe, Menorah, Dreidel, Kwanzaa, Cupid` },
+  };
+
+  function parseDeck(d, pictures) {
+    const words = [], pics = {};
+    d.list.split(',').map(s => s.trim()).filter(Boolean).forEach(entry => {
+      if (pictures) {
+        const i = entry.lastIndexOf('=');
+        const w = entry.slice(0, i).trim(), e = entry.slice(i + 1).trim();
+        if (i < 1 || !e) return; // picture decks must have a picture for every word
+        words.push(w); pics[w] = e;
+      } else words.push(entry);
+    });
+    return { name: d.name, emoji: d.emoji, color: d.color, pictures, words: [...new Set(words)], pics };
+  }
+  const DECKS = {};
+  for (const [k, d] of Object.entries(PICTURE_DECKS)) DECKS[k] = parseDeck(d, true);
+  for (const [k, d] of Object.entries(WORD_DECKS)) DECKS[k] = parseDeck(d, false);
+  const PIC_KEYS = Object.keys(PICTURE_DECKS), WORD_KEYS = Object.keys(WORD_DECKS);
+  // Picture mix: every picture deck together, still all pictures.
+  {
+    const pics = {};
+    PIC_KEYS.forEach(k => Object.assign(pics, DECKS[k].pics));
+    DECKS.picmix = { name: 'Picture Mix', emoji: '🎨', color: '#ff7043', pictures: true, words: Object.keys(pics), pics };
+  }
+  DECKS.mix = { name: 'Everything!', emoji: '🎲', color: '#ff4d8d', pictures: false,
+    words: [...new Set([...PIC_KEYS, ...WORD_KEYS].flatMap(k => DECKS[k].words))], pics: {} };
+
   const CUSTOM_KEY = 'foreheadGuess.custom';
   const TIME_KEY = 'foreheadGuess.time';
-  const SENS_KEY = 'foreheadGuess.sens';
+  const NOD_KEY = 'foreheadGuess.nod';
   const PICS_KEY = 'foreheadGuess.pics';
   const TIMES = [30, 60, 90, 120];
-
-  // Pictures for words, so kids who can't read yet can help give clues.
-  const EMOJI_LIST = {
-    // Animals
-    'Dog':'🐶','Cat':'🐱','Elephant':'🐘','Giraffe':'🦒','Monkey':'🐒','Lion':'🦁','Tiger':'🐯','Penguin':'🐧',
-    'Kangaroo':'🦘','Zebra':'🦓','Frog':'🐸','Snake':'🐍','Rabbit':'🐰','Horse':'🐴','Cow':'🐮','Pig':'🐷',
-    'Duck':'🦆','Chicken':'🐔','Owl':'🦉','Shark':'🦈','Whale':'🐳','Dolphin':'🐬','Octopus':'🐙','Turtle':'🐢',
-    'Bear':'🐻','Panda':'🐼','Koala':'🐨','Butterfly':'🦋','Bee':'🐝','Spider':'🕷️','Crocodile':'🐊','Hippo':'🦛',
-    'Camel':'🐫','Squirrel':'🐿️','Mouse':'🐭','Sheep':'🐑','Goat':'🐐','Parrot':'🦜','Flamingo':'🦩','Peacock':'🦚',
-    'Snail':'🐌','Ladybug':'🐞','Crab':'🦀','Gorilla':'🦍','Deer':'🦌','Fox':'🦊','Wolf':'🐺','Bat':'🦇','Hamster':'🐹',
-    // Food
-    'Pizza':'🍕','Ice Cream':'🍦','Banana':'🍌','Apple':'🍎','Spaghetti':'🍝','Pancakes':'🥞','Popcorn':'🍿',
-    'Hot Dog':'🌭','Taco':'🌮','Cookie':'🍪','Cupcake':'🧁','Watermelon':'🍉','Carrot':'🥕','Sandwich':'🥪',
-    'Cheese':'🧀','Egg':'🥚','Cereal':'🥣','Broccoli':'🥦','Strawberry':'🍓','Grapes':'🍇','Corn on the Cob':'🌽',
-    'Lemon':'🍋','Chocolate':'🍫','Birthday Cake':'🎂','Hamburger':'🍔','French Fries':'🍟','Donut':'🍩',
-    'Pretzel':'🥨','Peanut Butter':'🥜','Milk':'🥛','Orange Juice':'🧃','Lollipop':'🍭','Pickle':'🥒',
-    'Pineapple':'🍍','Soup':'🍲','Waffles':'🧇',
-    // Act It Out
-    'Swimming':'🏊','Sleeping':'😴','Brushing Teeth':'🪥','Dancing':'💃','Sneezing':'🤧','Crying':'😭',
-    'Laughing':'😂','Clapping':'👏','Running':'🏃','Climbing':'🧗','Driving':'🚗','Reading':'📖','Painting':'🎨',
-    'Singing':'🎤','Fishing':'🎣','Yawning':'🥱','Waving':'👋','Hugging':'🤗','Cooking':'🍳','Riding a Bike':'🚴',
-    'Throwing a Ball':'🤾','Blowing Bubbles':'🫧','Ice Skating':'⛸️','Taking a Photo':'📸','Playing Guitar':'🎸',
-    'Playing Drums':'🥁','Washing Hands':'🧼','Tying Shoes':'👟','Building a Snowman':'⛄','Walking a Dog':'🐕',
-    'Flying a Kite':'🪁','Rowing a Boat':'🚣','Eating Spaghetti':'🍝',
-    // At Home
-    'Bed':'🛏️','Chair':'🪑','Toothbrush':'🪥','Television':'📺','Bathtub':'🛁','Toilet':'🚽','Door':'🚪',
-    'Window':'🪟','Couch':'🛋️','Spoon':'🥄','Fork':'🍴','Cup':'☕','Plate':'🍽️','Clock':'⏰','Mirror':'🪞',
-    'Backpack':'🎒','Book':'📚','Crayon':'🖍️','Scissors':'✂️','Umbrella':'☂️','Shoes':'👟','Socks':'🧦','Hat':'🧢',
-    'Teddy Bear':'🧸','Broom':'🧹','Key':'🔑','Soap':'🧼',
-    // Jobs & People
-    'Doctor':'🧑‍⚕️','Teacher':'🧑‍🏫','Firefighter':'🧑‍🚒','Police Officer':'👮','Chef':'🧑‍🍳','Astronaut':'🧑‍🚀',
-    'Farmer':'🧑‍🌾','Pilot':'🧑‍✈️','Dentist':'🦷','Nurse':'🩺','Artist':'🧑‍🎨','Mail Carrier':'📬','Baker':'🍞',
-    'Builder':'👷','Bus Driver':'🚌','Lifeguard':'🛟','Scientist':'🧑‍🔬','Vet':'🐾','Clown':'🤡','Magician':'🎩',
-    'Librarian':'📚','Mechanic':'🧑‍🔧','Zookeeper':'🦁','Singer':'🧑‍🎤','Dancer':'💃','Baby':'👶','Grandma':'👵',
-    'Grandpa':'👴','Coach':'📣','Cowboy':'🤠','Waiter':'🍽️','Photographer':'📷','Plumber':'🪠','Barber':'💈',
-    'Cashier':'💵','Garbage Collector':'🗑️','Superhero':'🦸','Pirate':'🏴‍☠️','King':'🤴','Queen':'👸',
-    // Sports & Games
-    'Soccer':'⚽','Basketball':'🏀','Baseball':'⚾','Football':'🏈','Tennis':'🎾','Hide and Seek':'🙈',
-    'Bowling':'🎳','Golf':'⛳','Skateboard':'🛹','Karate':'🥋','Gymnastics':'🤸','Hockey':'🏒','Volleyball':'🏐',
-    'Ping Pong':'🏓','Puzzle':'🧩','Video Game':'🎮','Musical Chairs':'🎶','Surfing':'🏄','Skiing':'⛷️',
-    'Sledding':'🛷','Roller Skates':'🛼','Frisbee':'🥏','Yo-Yo':'🪀','Building Blocks':'🧱','Slide':'🛝',
-    'Board Game':'🎲','Peekaboo':'🙈','Duck Duck Goose':'🦆','Water Balloon':'🎈',
-    // Nature & Sky
-    'Sun':'☀️','Moon':'🌙','Star':'⭐','Rain':'🌧️','Snow':'🌨️','Rainbow':'🌈','Cloud':'☁️','Thunder':'⛈️',
-    'Lightning':'⚡','Tornado':'🌪️','Wind':'💨','Tree':'🌳','Flower':'🌸','Mountain':'⛰️','Volcano':'🌋',
-    'Ocean':'🌊','River':'🏞️','Beach':'🏖️','Desert':'🏜️','Forest':'🌲','Island':'🏝️','Leaf':'🍃','Rock':'🪨',
-    'Grass':'🌱','Snowflake':'❄️','Ice':'🧊','Campfire':'🔥','Sunset':'🌅','Earth':'🌍','Planet':'🪐',
-    'Seashell':'🐚','Rocket':'🚀','Comet':'☄️',
-    // Make Believe
-    'Dragon':'🐉','Unicorn':'🦄','Mermaid':'🧜‍♀️','Pirate Ship':'🏴‍☠️','Wizard':'🧙','Fairy':'🧚','Princess':'👸',
-    'Knight':'🛡️','Castle':'🏰','Robot':'🤖','Alien':'👽','Friendly Monster':'👾','Ghost':'👻','Magic Wand':'🪄',
-    'Treasure Chest':'💰','Spaceship':'🛸','Dinosaur':'🦖','Troll':'🧌','Genie':'🧞','Crown':'👑','Elf':'🧝',
-    'Ninja':'🥷','Time Machine':'⏳','Snowman':'⛄','Tooth Fairy':'🦷','Leprechaun':'🍀','Superpower':'💪',
-    'Bigfoot':'👣','Fairy Godmother':'🧚','Treasure Map':'🗺️','Crystal Ball':'🔮','Golden Egg':'🥚',
-    // Things That Go
-    'Car':'🚗','Bus':'🚌','Train':'🚆','Airplane':'✈️','Helicopter':'🚁','Boat':'🚤','Bicycle':'🚲',
-    'Motorcycle':'🏍️','Fire Truck':'🚒','Ambulance':'🚑','Police Car':'🚓','Tractor':'🚜','Rocket Ship':'🚀',
-    'School Bus':'🚌','Taxi':'🚕','Scooter':'🛴','Hot Air Balloon':'🎈','Sailboat':'⛵','Canoe':'🛶',
-    'Race Car':'🏎️','Ice Cream Truck':'🍦','Crane':'🏗️','Roller Coaster':'🎢','Cable Car':'🚡',
-    'Steam Train':'🚂','Kayak':'🛶',
-  };
-  const EMOJI = {};
-  for (const [w, e] of Object.entries(EMOJI_LIST)) EMOJI[w.toLowerCase()] = e;
-  const emojiFor = w => EMOJI[String(w).trim().toLowerCase()] || '';
 
   const store = {
     get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : v; } catch (e) { return d; } },
@@ -351,14 +496,15 @@
     return store.get(CUSTOM_KEY, '').split(/[\n,]/).map(s => s.trim()).filter(Boolean);
   }
   function deckWords(key) {
-    if (key === 'mix') return [...new Set(Object.values(DECKS).flatMap(d => d.words))];
-    if (key === 'custom') return customWords();
-    return DECKS[key].words;
+    return key === 'custom' ? customWords() : DECKS[key].words;
   }
   function deckMeta(key) {
-    if (key === 'mix') return { name: 'Everything!', emoji: '🎲', color: '#ff4d8d' };
-    if (key === 'custom') return { name: 'My Words', emoji: '✏️', color: '#5b6cff' };
-    return DECKS[key];
+    return key === 'custom' ? { name: 'My Words', emoji: '✏️', color: '#5b6cff', pictures: false } : DECKS[key];
+  }
+  // A picture is shown only on picture decks, where every word has one.
+  function picFor(word) {
+    const d = DECKS[game.deck];
+    return game.pics && d && d.pictures ? (d.pics[word] || '') : '';
   }
 
   // ---------------- DOM helpers ----------------
@@ -405,21 +551,19 @@
   // Using the W3C Z-X'-Y'' Euler convention, the world "up" component of each device axis is:
   //   screen normal (z): cos(beta)cos(gamma)   -> +1 screen faces sky, -1 faces floor, 0 upright
   //   device x (right):  -cos(beta)sin(gamma)  -> tells which way the phone is turned sideways
-  // This works the same whether the phone is held portrait or landscape.
   // Tilt is measured in degrees away from the player's own "neutral" angle (foreheads slope,
   // so neutral is rarely exactly vertical). Negative = screen toward floor, positive = toward sky.
-  const SENS = {
-    low:    { label: 'Low',    trig: 35 },
-    medium: { label: 'Medium', trig: 24 },
-    high:   { label: 'High',   trig: 16 },
+  const NODS = {
+    small:  { label: 'Small nod',  icon: '🙂', deg: 15, help: 'Counts after a small 15° nod. Easiest to trigger, but bumping around may count by accident.' },
+    medium: { label: 'Medium nod', icon: '😀', deg: 25, help: 'Counts after a 25° nod. A good middle ground for most players.' },
+    big:    { label: 'Big nod',    icon: '🤩', deg: 35, help: 'Counts only after a big 35° nod. Hardest to trigger by accident.' },
   };
-  const tilt = { has: false, z: 0, deg: 0, x: 0, last: 0 };
+  const tilt = { has: false, deg: 0, x: 0, last: 0 };
   const D = Math.PI / 180;
   function onOrient(e) {
     if (e.beta == null || e.gamma == null) return;
     const b = e.beta * D, g = e.gamma * D;
     const z = Math.cos(b) * Math.cos(g);
-    tilt.z = z;
     const deg = Math.asin(Math.max(-1, Math.min(1, z))) / D;
     tilt.deg = tilt.has ? tilt.deg * 0.3 + deg * 0.7 : deg;
     tilt.x = -Math.cos(b) * Math.sin(g);
@@ -457,14 +601,43 @@
 
   // ---------------- Game state ----------------
   const game = {
-    phase: 'idle',   // idle | ready | countdown | play | flash | over
+    phase: 'idle',   // idle | test | ready | countdown | play | flash | over
     deck: null, time: Number(store.get(TIME_KEY, 60)) || 60,
-    pool: [], word: '', results: [], endAt: 0, timerId: null,
+    word: '', results: [], endAt: 0, timerId: null,
     armed: false, uprightSince: 0, countId: null,
-    base: 0, steadyRef: 0, steadySince: 0,
-    sens: SENS[store.get(SENS_KEY, 'medium')] ? store.get(SENS_KEY, 'medium') : 'medium',
+    base: 0, steadyRef: 0, steadySince: 0, rel: 0, testCool: 0,
+    nod: NODS[store.get(NOD_KEY, 'medium')] ? store.get(NOD_KEY, 'medium') : 'medium',
     pics: store.get(PICS_KEY, '1') === '1',
   };
+
+  function resetNeutral() {
+    game.base = sensorLive() && Math.abs(tilt.deg) < 40 ? tilt.deg : 0;
+    game.steadyRef = game.base; game.steadySince = performance.now();
+    game.armed = true;
+  }
+
+  // Shared tilt detector for the game and the tester. Returns 'good', 'pass' or null.
+  function detect() {
+    const trig = NODS[game.nod].deg;
+    const now = performance.now();
+    // Track whether the phone is being held still.
+    if (Math.abs(tilt.deg - game.steadyRef) > 5) { game.steadyRef = tilt.deg; game.steadySince = now; }
+    const steady = now - game.steadySince > 600;
+    // Held still short of a trigger: that's the player's (possibly shifted) neutral.
+    if (steady && Math.abs(tilt.deg - game.base) < trig * 0.85 && Math.abs(tilt.deg) < 45) {
+      game.base = game.steadyRef;
+      game.armed = true;
+    }
+    const rel = game.rel = tilt.deg - game.base;
+    if (!game.armed) {
+      // Re-arm once the phone comes about halfway back toward neutral.
+      if (Math.abs(rel) < trig * 0.5) game.armed = true;
+      return null;
+    }
+    if (rel < -trig) { game.armed = false; return 'good'; }  // screen toward the floor = got it
+    if (rel > trig) { game.armed = false; return 'pass'; }   // screen toward the sky = pass
+    return null;
+  }
 
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
   const poolByDeck = {};
@@ -480,34 +653,83 @@
   }
 
   // ---------------- Home screen ----------------
+  function chipRow(id, opts, isOn, pick, rebuild) {
+    const row = $(id); row.innerHTML = '';
+    opts.forEach(([val, html, tall]) => {
+      const b = document.createElement('button');
+      b.className = 'chip' + (tall ? ' tall' : '') + (isOn(val) ? ' on' : '');
+      b.innerHTML = html;
+      b.onclick = () => { pick(val); rebuild(); };
+      row.appendChild(b);
+    });
+  }
+  const nodOpts = () => Object.entries(NODS).map(([k, n]) =>
+    [k, `<span class="nod">${n.icon}</span><span>${n.label}</span><span class="deg">${n.deg}°</span>`, true]);
+  const pickNod = k => { game.nod = k; store.set(NOD_KEY, k); };
+
   function buildHome() {
-    const chipRow = (id, opts, isOn, pick) => {
-      const row = $(id); row.innerHTML = '';
-      opts.forEach(([val, text]) => {
+    chipRow('timeChips', TIMES.map(t => [t, t + 's']), t => t === game.time,
+      t => { game.time = t; store.set(TIME_KEY, t); }, buildHome);
+    chipRow('sensChips', nodOpts(), k => k === game.nod, pickNod, buildHome);
+    $('sensHelp').textContent = NODS[game.nod].help;
+    chipRow('picChips', [[true, '🐶 Show'], [false, 'Hide']], v => v === game.pics,
+      v => { game.pics = v; store.set(PICS_KEY, v ? '1' : '0'); }, buildHome);
+
+    const fill = (gridId, keys) => {
+      const grid = $(gridId); grid.innerHTML = '';
+      keys.forEach(k => {
+        const m = deckMeta(k), n = deckWords(k).length;
         const b = document.createElement('button');
-        b.className = 'chip' + (isOn(val) ? ' on' : '');
-        b.textContent = text;
-        b.onclick = () => { pick(val); buildHome(); };
-        row.appendChild(b);
+        b.className = 'deck';
+        b.style.background = m.color;
+        const count = k === 'custom' ? (n ? n + ' words · tap to edit' : 'Add your own!') : n + ' words';
+        b.innerHTML = `<div class="emoji">${m.emoji}</div><div>${m.name}</div><div class="count">${count}</div>`;
+        b.onclick = () => k === 'custom' ? openCustom() : pickDeck(k);
+        grid.appendChild(b);
       });
     };
-    chipRow('timeChips', TIMES.map(t => [t, t + 's']), t => t === game.time,
-      t => { game.time = t; store.set(TIME_KEY, t); });
-    chipRow('sensChips', Object.entries(SENS).map(([k, s]) => [k, s.label]), k => k === game.sens,
-      k => { game.sens = k; store.set(SENS_KEY, k); });
-    chipRow('picChips', [[true, '🐶 On'], [false, 'Off']], v => v === game.pics,
-      v => { game.pics = v; store.set(PICS_KEY, v ? '1' : '0'); });
-    const grid = $('deckGrid'); grid.innerHTML = '';
-    const keys = [...Object.keys(DECKS), 'mix', 'custom'];
-    keys.forEach(k => {
-      const m = deckMeta(k), n = deckWords(k).length;
-      const b = document.createElement('button');
-      b.className = 'deck';
-      b.style.background = m.color;
-      b.innerHTML = `<div class="emoji">${m.emoji}</div><div>${m.name}</div><div class="count">${k === 'custom' ? (n ? n + ' words · tap to edit' : 'Add your own!') : n + ' words'}</div>`;
-      b.onclick = () => k === 'custom' ? openCustom() : pickDeck(k);
-      grid.appendChild(b);
-    });
+    fill('picGrid', [...PIC_KEYS, 'picmix']);
+    fill('wordGrid', [...WORD_KEYS, 'mix', 'custom']);
+  }
+
+  // ---------------- Tilt tester ----------------
+  function buildTester() {
+    chipRow('testChips', nodOpts(), k => k === game.nod, pickNod, buildTester);
+    // Gauge spans ±50°; the colored zones start at the chosen nod angle.
+    const zone = Math.max(0, (50 - NODS[game.nod].deg) / 100 * 100);
+    $('zonePass').style.height = zone + '%';
+    $('zoneGood').style.height = zone + '%';
+  }
+  $('testBtn').onclick = () => {
+    audio(); requestSensors(); keepAwake();
+    game.phase = 'test';
+    resetNeutral();
+    $('testHit').textContent = '';
+    $('testRead').textContent = 'Waiting for the tilt sensor…';
+    buildTester();
+    show('tester');
+    setTimeout(() => {
+      if (game.phase === 'test' && !sensorLive()) $('testRead').textContent = 'No tilt sensor found on this device.';
+    }, 1500);
+  };
+  $('testDone').onclick = () => { game.phase = 'idle'; buildHome(); show('home'); };
+
+  function updateTester() {
+    const now = performance.now();
+    const hit = now > game.testCool ? detect() : (detect(), null);
+    const rel = game.rel;
+    const clamped = Math.max(-50, Math.min(50, rel));
+    // Screen toward the sky (pass) moves the dot up; toward the floor (got it) moves it down.
+    $('testDot').style.top = (50 - clamped) + '%';
+    const r = Math.round(Math.abs(rel));
+    $('testRead').textContent = r < 3 ? 'Level — this is your neutral' : r + '° ' + (rel < 0 ? 'down' : 'back');
+    if (hit) {
+      game.testCool = now + 500;
+      if (hit === 'good') { sfx.good(); buzz(60); $('testHit').textContent = '✅ Got it!'; }
+      else { sfx.pass(); buzz([30, 40, 30]); $('testHit').textContent = '⏭️ Pass'; }
+      clearTimeout(updateTester.t);
+      updateTester.t = setTimeout(() => { $('testHit').textContent = ''; }, 1200);
+    }
   }
 
   function openCustom() {
@@ -572,7 +794,7 @@
   // ---------------- Countdown ----------------
   function startCountdown() {
     if (game.phase !== 'ready') return;
-    if (!game.uprightSince) game.base = sensorLive() && Math.abs(tilt.deg) < 40 ? tilt.deg : 0;
+    if (!game.uprightSince) resetNeutral();
     game.phase = 'countdown';
     setViewportVars();
     lockStageRotation();
@@ -620,7 +842,7 @@
   function nextWord() {
     game.word = drawWord();
     $('word').textContent = game.word;
-    $('pic').textContent = game.pics ? emojiFor(game.word) : '';
+    $('pic').textContent = picFor(game.word);
     fitWord();
   }
 
@@ -652,7 +874,8 @@
     const f = $('flash');
     f.className = 'show ' + (ok ? 'good' : 'pass');
     $('flashText').textContent = ok ? 'CORRECT!' : 'PASS';
-    $('flashWord').textContent = (game.pics && emojiFor(game.word) ? emojiFor(game.word) + ' ' : '') + game.word;
+    const pic = picFor(game.word);
+    $('flashWord').textContent = (pic ? pic + ' ' : '') + game.word;
     if (ok) { sfx.good(); buzz(60); } else { sfx.pass(); buzz([30, 40, 30]); }
     setTimeout(() => {
       if (game.phase !== 'flash') return;
@@ -664,6 +887,7 @@
   }
 
   function onTilt() {
+    if (game.phase === 'test') { updateTester(); return; }
     if (game.phase === 'ready') {
       const upright = Math.abs(tilt.deg) < 30;
       const now = performance.now();
@@ -687,24 +911,8 @@
       return;
     }
     if (game.phase !== 'play') return;
-    const trig = SENS[game.sens].trig;
-    const now = performance.now();
-    // Track whether the phone is being held still.
-    if (Math.abs(tilt.deg - game.steadyRef) > 5) { game.steadyRef = tilt.deg; game.steadySince = now; }
-    const steady = now - game.steadySince > 600;
-    // Held still short of a trigger: that's the player's (possibly shifted) neutral.
-    if (steady && Math.abs(tilt.deg - game.base) < trig * 0.85 && Math.abs(tilt.deg) < 45) {
-      game.base = game.steadyRef;
-      game.armed = true;
-    }
-    const rel = tilt.deg - game.base;
-    if (!game.armed) {
-      // Re-arm once the phone comes about halfway back toward neutral.
-      if (Math.abs(rel) < trig * 0.5) game.armed = true;
-      return;
-    }
-    if (rel < -trig) mark(true);       // screen toward the floor = got it
-    else if (rel > trig) mark(false);  // screen toward the sky = pass
+    const hit = detect();
+    if (hit) mark(hit === 'good');
   }
 
   $('tapGood').onclick = () => mark(true);
@@ -742,7 +950,8 @@
       const d = document.createElement('div');
       d.className = 'item ' + (r.ok ? 'ok' : 'no');
       const name = document.createElement('span');
-      name.textContent = (game.pics && emojiFor(r.word) ? emojiFor(r.word) + '  ' : '') + r.word;
+      const pic = picFor(r.word);
+      name.textContent = (pic ? pic + '  ' : '') + r.word;
       const mk = document.createElement('span'); mk.textContent = r.ok ? '✅' : '⏭️';
       d.append(name, mk);
       list.appendChild(d);
