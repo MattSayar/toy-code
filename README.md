@@ -62,6 +62,13 @@ A fast-paced reaction game where players pilot a spaceship and dodge obstacles b
 
 A space survival game where players pilot a ship through an asteroid field. Dodge randomly spawning asteroids that increase in speed and frequency over time. Features smooth controls (keyboard or touch), particle effects, and progressive difficulty scaling.
 
+## Arcade Games
+
+### Skyline Swing
+[Play it now](https://code.mattsayar.com/skyline-swing.html)
+
+A side-scrolling swinging game. Hold (mouse, touch, or Space) to fire a grapple line at the glowing hook, then let go to fly toward the next one. Holding also reels you in to build speed. Don't fall to the street. The game gets harder every 250 m: hooks spread out, some start moving, drones appear, and your line gets shorter. Grab gems for bonus points. Your best distance is saved.
+
 ## Party Games
 
 ### Forehead Guess

@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Skyline Swing</title>
+<style>
+  :root {
+    --ink: #f5f1ff;
+    --dim: #b9b0d6;
+    --accent: #ff9a3c;
+    --accent2: #3ce0c8;
+    --panel: rgba(16, 12, 34, 0.82);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    background: #120c26; color: var(--ink);
+    font-family: "Trebuchet MS", "Segoe UI", system-ui, sans-serif;
+    -webkit-user-select: none; user-select: none;
+    -webkit-touch-callout: none; touch-action: none;
+  }
+  canvas { display: block; width: 100vw; height: 100vh; }
+  #hud {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding: 12px 16px; pointer-events: none;
+    font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,.6);
+  }
+  #hud .big { font-size: 28px; }
+  #hud .small { font-size: 14px; color: var(--dim); }
+  #hud .right { text-align: right; }
+  #muteBtn, #pauseBtn {
+    pointer-events: auto; background: rgba(0,0,0,.35); color: var(--ink);
+    border: 1px solid rgba(255,255,255,.2); border-radius: 8px;
+    font-size: 16px; padding: 4px 9px; margin-left: 6px; cursor: pointer;
+  }
+  .overlay {
+    position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+    padding: 16px; background: rgba(8, 5, 20, 0.45);
+  }
+  .overlay.hidden { display: none; }
+  .card {
+    background: var(--panel); border: 1px solid rgba(255,255,255,.12);
+    border-radius: 18px; padding: 26px 28px; max-width: 440px; width: 100%;
+    text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+  }
+  .card h1 {
+    font-size: 42px; letter-spacing: 1px; line-height: 1;
+    background: linear-gradient(90deg, var(--accent), #ffd166, var(--accent2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    margin-bottom: 10px;
+  }
+  .card h2 { font-size: 30px; margin-bottom: 8px; color: var(--accent); }
+  .card p { color: var(--dim); line-height: 1.45; margin: 8px 0; font-size: 15px; }
+  .card p b { color: var(--ink); }
+  .stats { display: flex; justify-content: center; gap: 18px; margin: 14px 0 6px; }
+  .stats div { font-size: 13px; color: var(--dim); }
+  .stats span { display: block; font-size: 26px; color: var(--ink); font-weight: bold; }
+  .btn {
+    margin-top: 16px; font: inherit; font-weight: bold; font-size: 20px;
+    padding: 12px 34px; border-radius: 999px; border: none; cursor: pointer;
+    color: #1b1030; background: linear-gradient(90deg, var(--accent), #ffd166);
+    box-shadow: 0 6px 20px rgba(255,154,60,.4);
+  }
+  .btn:active { transform: translateY(1px); }
+  .newbest { color: #ffd166 !important; font-weight: bold; }
+  #banner {
+    position: fixed; left: 50%; top: 22%; transform: translate(-50%, -50%);
+    text-align: center; pointer-events: none; opacity: 0; transition: opacity .4s;
+    text-shadow: 0 3px 8px rgba(0,0,0,.7); width: 90%;
+  }
+  #banner .z { font-size: 40px; font-weight: bold; color: #ffd166; }
+  #banner .t { font-size: 18px; color: var(--ink); margin-top: 4px; }
+  #banner.show { opacity: 1; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div id="hud">
+  <div>
+    <div class="big" id="hudDist">0 m</div>
+    <div class="small" id="hudZone">Zone 1</div>
+  </div>
+  <div class="right">
+    <div>
+      <button id="pauseBtn" title="Pause (P)">⏸</button>
+      <button id="muteBtn" title="Sound (M)">🔊</button>
+    </div>
+    <div class="small" style="margin-top:6px">◆ <span id="hudGems">0</span> &nbsp; Best <span id="hudBest">0</span> m</div>
+  </div>
+</div>
+
+<div id="banner"><div class="z" id="bannerZ"></div><div class="t" id="bannerT"></div></div>
+
+<div class="overlay" id="titleScreen">
+  <div class="card">
+    <h1>Skyline Swing</h1>
+    <p>Swing across the city on your grapple line. How far can you get?</p>
+    <p><b>Hold</b> (mouse, touch, or Space) to fire your line at the glowing hook.<br>
+       <b>Let go</b> to fly. Holding also reels you in for more speed.</p>
+    <p>Don't fall to the street. Watch out for drones. Grab ◆ gems for points.</p>
+    <button class="btn" id="startBtn">Swing!</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="pauseScreen">
+  <div class="card">
+    <h2>Paused</h2>
+    <button class="btn" id="resumeBtn">Resume</button>
+  </div>
+</div>
+
+<div class="overlay hidden" id="overScreen">
+  <div class="card">
+    <h2 id="overTitle">You fell!</h2>
+    <div class="stats">
+      <div><span id="oDist">0</span>meters</div>
+      <div><span id="oZone">1</span>zone</div>
+      <div><span id="oGems">0</span>gems</div>
+    </div>
+    <p id="oScore">Score 0</p>
+    <p id="oBest"></p>
+    <button class="btn" id="retryBtn">Try again</button>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Setup ----------
+  const cvs = document.getElementById('c');
+  const ctx = cvs.getContext('2d');
+  const WORLD_H = 600;         // logical world height; width depends on screen
+  const FLOOR_Y = 600;         // fall below this = game over
+  const PX_PER_M = 10;
+  const ZONE_LEN_M = 250;
+
+  let dpr = 1, scale = 1, viewW = 800;
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cvs.width = Math.floor(innerWidth * dpr);
+    cvs.height = Math.floor(innerHeight * dpr);
+    scale = cvs.height / WORLD_H;
+    viewW = cvs.width / scale;
+  }
+  addEventListener('resize', resize);
+  resize();
+
+  const $ = id => document.getElementById(id);
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  };
+  let best = store.get('skylineSwing.best', 0);
+  let muted = store.get('skylineSwing.muted', false);
+  $('hudBest').textContent = best;
+  $('muteBtn').textContent = muted ? '🔇' : '🔊';
+
+  // ---------- Audio ----------
+  let actx = null;
+  function beep(freq, dur, type = 'square', vol = 0.06, slide = 0) {
+    if (muted) return;
+    try {
+      if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+      const t = actx.currentTime;
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(30, freq + slide), t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(actx.destination);
+      o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  const sfx = {
+    shoot: () => beep(900, 0.08, 'square', 0.04, -500),
+    miss:  () => beep(200, 0.12, 'sawtooth', 0.04, -100),
+    gem:   () => { beep(1200, 0.08, 'triangle', 0.07); setTimeout(() => beep(1800, 0.1, 'triangle', 0.06), 60); },
+    zone:  () => { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, 0.14, 'triangle', 0.07), i * 90)); },
+    die:   () => beep(400, 0.6, 'sawtooth', 0.07, -340),
+  };
+
+  // ---------- Seeded helpers ----------
+  function hash(n) { n = (n << 13) ^ n; return 1 - ((n * (n * n * 15731 + 789221) + 1376312589) & 0x7fffffff) / 1073741824; }
+  const rand = (a, b) => a + Math.random() * (b - a);
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  // ---------- Difficulty ----------
+  const ZONE_NOTES = {
+    1: 'Hold to swing, let go to fly',
+    2: 'Hooks spread out',
+    3: 'Some hooks are on the move!',
+    4: 'Drones ahead — don\'t touch!',
+    5: 'Shorter line range',
+    6: 'Bigger gaps',
+    7: 'Faster drones',
+    8: 'Hooks dropping lower',
+  };
+  function diff(zone) {
+    const t = clamp((zone - 1) / 9, 0, 1);
+    return {
+      t,
+      spaceMin: 170 + 140 * t,
+      spaceMax: 235 + 165 * t,
+      range: zone >= 5 ? 400 - 95 * t : 410,
+      yMin: 70,
+      yMax: 250 + (zone >= 8 ? 90 : 50) * t,
+      moveChance: zone >= 3 ? 0.18 + 0.4 * t : 0,
+      droneChance: zone >= 4 ? 0.25 + 0.45 * t : 0,
+      droneSpeed: zone >= 7 ? 1.6 + 1.2 * t : 1 + 0.6 * t,
+      gemChance: 0.35,
+    };
+  }
+
+  // ---------- Game state ----------
+  let state = 'title';
+  let player, rope, anchors, drones, gems, particles, trail, scarf;
+  let camX, camY, startX, lastAnchorX, zone, gemCount, holding, missFx, target, time, shake, deathReason;
+
+  function reset() {
+    startX = 120;
+    player = { x: startX, y: 470, vx: 0, vy: 0, onLedge: true, angle: 0 };
+    rope = null; holding = false; missFx = null; target = null;
+    anchors = []; drones = []; gems = []; particles = []; trail = [];
+    scarf = Array.from({ length: 7 }, () => ({ x: player.x, y: player.y }));
+    camX = player.x - viewW * 0.3; camY = 0;
+    zone = 1; gemCount = 0; time = 0; shake = 0;
+    lastAnchorX = 300;
+    anchors.push({ x: 300, y: 170, baseY: 170, amp: 0, ph: 0, sp: 0 });
+    while (lastAnchorX < camX + viewW + 800) spawnNext();
+    updateHud();
+  }
+
+  function zoneAtX(x) { return 1 + Math.floor(Math.max(0, (x - startX) / PX_PER_M) / ZONE_LEN_M); }
+
+  function spawnNext() {
+    const z = zoneAtX(lastAnchorX);
+    const d = diff(z);
+    const prev = anchors[anchors.length - 1];
+    const x = lastAnchorX + rand(d.spaceMin, d.spaceMax);
+    // keep consecutive hooks from jumping wildly in height
+    let y = clamp(prev.baseY + rand(-130, 130), d.yMin, d.yMax);
+    const moving = Math.random() < d.moveChance;
+    const a = {
+      x, y, baseY: y,
+      amp: moving ? rand(35, 60 + 40 * d.t) : 0,
+      ph: rand(0, Math.PI * 2),
+      sp: moving ? rand(1.2, 2 + 1.2 * d.t) : 0,
+    };
+    anchors.push(a);
+
+    // drone between previous and this hook, in the swing lane
+    if (Math.random() < d.droneChance) {
+      const dx = (prev.x + x) / 2 + rand(-20, 20);
+      const dy = rand(330, 470);
+      drones.push({ x: dx, y: dy, baseY: dy, amp: rand(50, 110), ph: rand(0, 6.28), sp: d.droneSpeed * rand(0.8, 1.2), r: 15 });
+    } else if (Math.random() < d.gemChance) {
+      // little arc of gems
+      const gx = (prev.x + x) / 2, gy = rand(260, 420);
+      const n = 3;
+      for (let i = 0; i < n; i++) gems.push({ x: gx + (i - 1) * 32, y: gy - Math.sin((i / (n - 1)) * Math.PI) * 24, got: false });
+    }
+    lastAnchorX = x;
+  }
+
+  function anchorPos(a) { return { x: a.x, y: a.baseY + Math.sin(time * a.sp + a.ph) * a.amp }; }
+  function dronePos(d) { return { x: d.x, y: d.baseY + Math.sin(time * d.sp + d.ph) * d.amp }; }
+
+  function findTarget() {
+    const R = diff(zone).range;
+    let bestA = null, bestScore = Infinity;
+    // ideal grab point: up and ahead of the player
+    const ix = player.x + R * 0.45, iy = player.y - R * 0.65;
+    for (const a of anchors) {
+      const p = anchorPos(a);
+      if (p.x < player.x - 30 || p.y > player.y - 25) continue;
+      const dist = Math.hypot(p.x - player.x, p.y - player.y);
+      if (dist > R || dist < 40) continue;
+      const s = Math.hypot(p.x - ix, p.y - iy);
+      if (s < bestScore) { bestScore = s; bestA = a; }
+    }
+    return bestA;
+  }
+
+  function press() {
+    if (state !== 'play') return;
+    if (holding) return;
+    holding = true;
+    if (player.onLedge) {
+      player.onLedge = false;
+      player.vx = 330; player.vy = -480;
+    }
+    const a = findTarget();
+    if (a) {
+      const p = anchorPos(a);
+      rope = { a, len: Math.hypot(p.x - player.x, p.y - player.y) };
+      sfx.shoot();
+    } else {
+      const R = diff(zone).range;
+      missFx = { x: player.x + R * 0.5, y: player.y - R * 0.6, t: 0.18 };
+      sfx.miss();
+    }
+  }
+  function release() {
+    holding = false;
+    if (rope) {
+      // small release kick in the direction of travel feels good
+      const sp = Math.hypot(player.vx, player.vy);
+      if (sp > 1) { player.vx *= 1.04; player.vy *= 1.04; }
+      rope = null;
+    }
+  }
+
+  // ---------- Physics ----------
+  const G = 1500, REEL = 70, MIN_LEN = 70, MAX_SPEED = 1500;
+  function step(dt) {
+    time += dt;
+    if (player.onLedge) return;
+
+    if (rope && holding && rope.len > MIN_LEN) rope.len -= REEL * dt;
+
+    player.vy += G * dt;
+    player.vx *= (1 - 0.05 * dt);
+    player.x += player.vx * dt;
+    player.y += player.vy * dt;
+
+    if (rope) {
+      const p = anchorPos(rope.a);
+      const dx = player.x - p.x, dy = player.y - p.y;
+      const d = Math.hypot(dx, dy);
+      if (d > rope.len) {
+        const nx = dx / d, ny = dy / d;
+        player.x = p.x + nx * rope.len;
+        player.y = p.y + ny * rope.len;
+        const vr = player.vx * nx + player.vy * ny;
+        if (vr > 0) { player.vx -= vr * nx; player.vy -= vr * ny; }
+      }
+    }
+    const sp = Math.hypot(player.vx, player.vy);
+    if (sp > MAX_SPEED) { player.vx *= MAX_SPEED / sp; player.vy *= MAX_SPEED / sp; }
+  }
+
+  function update(dt) {
+    const SUB = 4;
+    for (let i = 0; i < SUB; i++) step(dt / SUB);
+
+    // zone progression
+    const z = zoneAtX(player.x);
+    if (z > zone) {
+      zone = z;
+      showBanner('Zone ' + zone, ZONE_NOTES[zone] || 'Keep swinging!');
+      sfx.zone();
+    }
+
+    // world streaming
+    while (lastAnchorX < camX + viewW + 800) spawnNext();
+    const cull = camX - 400;
+    anchors = anchors.filter(a => a.x > cull || (rope && rope.a === a));
+    drones = drones.filter(d => d.x > cull);
+    gems = gems.filter(g => g.x > cull && !g.got);
+
+    // gems
+    for (const g of gems) {
+      if (!g.got && Math.hypot(g.x - player.x, g.y - player.y) < 26) {
+        g.got = true; gemCount++; sfx.gem();
+        burst(g.x, g.y, '#ffd166', 10, 180);
+      }
+    }
+    // drones
+    for (const d of drones) {
+      const p = dronePos(d);
+      if (Math.hypot(p.x - player.x, p.y - player.y) < d.r + 11) { die('Zapped by a drone!'); return; }
+    }
+    if (player.y > FLOOR_Y + 20) { die('You fell!'); return; }
+
+    // target highlight & miss fx
+    target = rope ? null : findTarget();
+    if (missFx) { missFx.t -= dt; if (missFx.t <= 0) missFx = null; }
+
+    // camera
+    const targetCamX = player.x - viewW * 0.32;
+    camX += (targetCamX - camX) * Math.min(1, dt * 6);
+    const targetCamY = Math.min(0, player.y - 120);    // look up if player flies high
+    camY += (targetCamY - camY) * Math.min(1, dt * 4);
+    shake = Math.max(0, shake - dt * 30);
+
+    // scarf follows head
+    const head = { x: player.x, y: player.y - 12 };
+    scarf[0].x = head.x; scarf[0].y = head.y;
+    for (let i = 1; i < scarf.length; i++) {
+      const s = scarf[i], p = scarf[i - 1];
+      s.y += 40 * dt; // droop
+      const dx = s.x - p.x, dy = s.y - p.y, d = Math.hypot(dx, dy) || 1;
+      const L = 6;
+      s.x = p.x + dx / d * L; s.y = p.y + dy / d * L;
+    }
+    // speed trail
+    const sp = Math.hypot(player.vx, player.vy);
+    if (!player.onLedge && sp > 700 && Math.random() < 0.6) {
+      particles.push({ x: player.x, y: player.y, vx: -player.vx * 0.05, vy: -player.vy * 0.05, life: 0.35, max: 0.35, c: 'rgba(60,224,200,', s: 3 });
+    }
+    for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.life -= dt; }
+    particles = particles.filter(p => p.life > 0);
+
+    player.angle = rope ? Math.atan2(player.y - anchorPos(rope.a).y, player.x - anchorPos(rope.a).x) - Math.PI / 2
+                        : Math.atan2(player.vy, Math.max(80, Math.abs(player.vx))) * 0.6;
+    updateHud();
+  }
+
+  function burst(x, y, color, n, spd) {
+    const c = color.startsWith('#') ? hexToRgba(color) : color;
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = rand(spd * 0.3, spd);
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 0.6, max: 0.6, c, s: rand(2, 4) });
+    }
+  }
+  function hexToRgba(h) {
+    const n = parseInt(h.slice(1), 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},`;
+  }
+
+  function distM() { return Math.max(0, Math.floor((player.x - startX) / PX_PER_M)); }
+  function score() { return distM() + gemCount * 25; }
+
+  let lastHud = '';
+  function updateHud() {
+    const key = distM() + '|' + zone + '|' + gemCount;
+    if (key === lastHud) return;
+    lastHud = key;
+    $('hudDist').textContent = distM() + ' m';
+    $('hudZone').textContent = 'Zone ' + zone;
+    $('hudGems').textContent = gemCount;
+  }
+
+  let bannerTimer = null;
+  function showBanner(z, t) {
+    $('bannerZ').textContent = z; $('bannerT').textContent = t;
+    $('banner').classList.add('show');
+    clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => $('banner').classList.remove('show'), 2200);
+  }
+
+  function die(reason) {
+    if (state !== 'play') return;
+    state = 'over'; deathReason = reason;
+    rope = null; holding = false; shake = 12;
+    sfx.die();
+    burst(player.x, Math.min(player.y, FLOOR_Y), '#ff9a3c', 24, 300);
+    const d = distM();
+    const isBest = d > best;
+    if (isBest) { best = d; store.set('skylineSwing.best', best); $('hudBest').textContent = best; }
+    setTimeout(() => {
+      $('overTitle').textContent = reason;
+      $('oDist').textContent = d;
+      $('oZone').textContent = zone;
+      $('oGems').textContent = gemCount;
+      $('oScore').textContent = 'Score ' + score() + '  (distance + 25 per gem)';
+      $('oBest').textContent = isBest ? '★ New best distance! ★' : 'Best: ' + best + ' m';
+      $('oBest').className = isBest ? 'newbest' : '';
+      $('overScreen').classList.remove('hidden');
+    }, 700);
+  }
+
+  function start() {
+    reset();
+    state = 'play';
+    $('titleScreen').classList.add('hidden');
+    $('overScreen').classList.add('hidden');
+    $('pauseScreen').classList.add('hidden');
+    showBanner('Zone 1', ZONE_NOTES[1]);
+  }
+  function togglePause() {
+    if (state === 'play') { state = 'paused'; holding = false; rope = null; $('pauseScreen').classList.remove('hidden'); }
+    else if (state === 'paused') { state = 'play'; $('pauseScreen').classList.add('hidden'); last = performance.now(); }
+  }
+
+  // ---------- Rendering ----------
+  const SKY = [
+    ['#ff8a5c', '#a2427a', '#2b1a4f'],   // sunset
+    ['#e0607e', '#6b2f86', '#1c1342'],   // dusk
+    ['#7a3f9a', '#30206b', '#0f0c2e'],   // evening
+    ['#2d2f7a', '#141648', '#06071c'],   // night
+  ];
+  function lerpColor(a, b, t) {
+    const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+    const r = Math.round((pa >> 16) + ((pb >> 16) - (pa >> 16)) * t);
+    const g = Math.round(((pa >> 8) & 255) + (((pb >> 8) & 255) - ((pa >> 8) & 255)) * t);
+    const bl = Math.round((pa & 255) + ((pb & 255) - (pa & 255)) * t);
+    return `rgb(${r},${g},${bl})`;
+  }
+  function skyColors() {
+    const f = clamp(((player ? player.x - startX : 0) / PX_PER_M) / (ZONE_LEN_M * 2.5), 0, SKY.length - 1.001);
+    const i = Math.floor(f), t = f - i;
+    return SKY[i].map((c, k) => lerpColor(c, SKY[i + 1][k], t));
+  }
+
+  function drawSkyline(par, baseY, minH, maxH, wMin, wMax, color, windows, seed) {
+    const offset = camX * par;
+    const startI = Math.floor(offset / wMax) - 2;
+    const endI = startI + Math.ceil(viewW / wMin) + 4;
+    ctx.fillStyle = color;
+    for (let i = startI; i < endI; i++) {
+      const w = wMin + (hash(i * 7 + seed) * 0.5 + 0.5) * (wMax - wMin);
+      const h = minH + (hash(i * 13 + seed) * 0.5 + 0.5) * (maxH - minH);
+      const x = i * wMax - offset;
+      const y = baseY - h - camY * par * 0.5;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w - 4, h + 400);
+      if (windows) {
+        ctx.fillStyle = windows;
+        for (let wy = y + 12; wy < baseY - 10; wy += 18) {
+          for (let wx = x + 8; wx < x + w - 14; wx += 14) {
+            if (hash(Math.floor(wx * 3 + wy * 7 + seed)) > 0.35) ctx.fillRect(wx, wy, 5, 8);
+          }
+        }
+      }
+    }
+  }
+
+  function render() {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    const sk = skyColors();
+    const grd = ctx.createLinearGradient(0, cvs.height, 0, 0);
+    grd.addColorStop(0, sk[0]); grd.addColorStop(0.5, sk[1]); grd.addColorStop(1, sk[2]);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    if (shake > 0) ctx.translate(rand(-shake, shake) * 0.5, rand(-shake, shake) * 0.5);
+
+    // moon & stars
+    const night = clamp(((player.x - startX) / PX_PER_M) / (ZONE_LEN_M * 4), 0, 1);
+    ctx.fillStyle = `rgba(255,255,255,${0.15 + night * 0.7})`;
+    for (let i = 0; i < 50; i++) {
+      const sx = ((hash(i * 31) * 0.5 + 0.5) * 2000 - camX * 0.02) % viewW;
+      const sy = (hash(i * 17) * 0.5 + 0.5) * 300 - camY * 0.05;
+      ctx.fillRect((sx + viewW) % viewW, sy, 1.6, 1.6);
+    }
+    ctx.fillStyle = `rgba(255,240,210,${0.5 + night * 0.4})`;
+    ctx.beginPath(); ctx.arc(viewW * 0.78, 110 - camY * 0.05, 34, 0, Math.PI * 2); ctx.fill();
+
+    // parallax skylines
+    drawSkyline(0.15, 560, 140, 300, 60, 110, 'rgba(40,20,70,0.55)', null, 1);
+    drawSkyline(0.35, 590, 110, 260, 50, 95, 'rgba(28,14,52,0.8)', `rgba(255,210,120,${0.12 + night * 0.25})`, 2);
+    drawSkyline(0.6, 620, 70, 180, 70, 120, '#160b2c', `rgba(255,200,110,${0.18 + night * 0.35})`, 3);
+
+    // world space
+    ctx.save();
+    ctx.translate(-camX, -camY);
+
+    // starting ledge
+    if (startX > camX - 200) {
+      ctx.fillStyle = '#24143f';
+      ctx.fillRect(startX - 220, 482, 280, 400);
+      ctx.fillStyle = '#3a2366';
+      ctx.fillRect(startX - 220, 478, 280, 8);
+    }
+
+    // street glow (danger zone)
+    const sg = ctx.createLinearGradient(0, FLOOR_Y - 60, 0, FLOOR_Y + 30);
+    sg.addColorStop(0, 'rgba(255,80,60,0)');
+    sg.addColorStop(1, 'rgba(255,80,60,0.35)');
+    ctx.fillStyle = sg;
+    ctx.fillRect(camX - 50, FLOOR_Y - 60, viewW + 100, 200);
+
+    // gems
+    for (const g of gems) {
+      if (g.got) continue;
+      const bob = Math.sin(time * 4 + g.x * 0.05) * 3;
+      ctx.save();
+      ctx.translate(g.x, g.y + bob);
+      ctx.rotate(Math.PI / 4);
+      ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 12;
+      ctx.fillStyle = '#ffd166';
+      ctx.fillRect(-6, -6, 12, 12);
+      ctx.shadowBlur = 0;
+      ctx.fillStyle = '#fff6d6';
+      ctx.fillRect(-6, -6, 5, 5);
+      ctx.restore();
+    }
+
+    // anchors (grapple hooks on hovering beacons)
+    for (const a of anchors) {
+      const p = anchorPos(a);
+      const isTarget = a === target;
+      const isHooked = rope && rope.a === a;
+      const moving = a.amp > 0;
+      // beacon body
+      ctx.fillStyle = moving ? '#7a5cff' : '#4a3a7a';
+      ctx.beginPath();
+      ctx.ellipse(p.x, p.y - 14, 16, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      // little rotor blur
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      const rw = 14 + Math.sin(time * 40 + a.x) * 4;
+      ctx.moveTo(p.x - rw, p.y - 22); ctx.lineTo(p.x + rw, p.y - 22);
+      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(p.x, p.y - 20); ctx.lineTo(p.x, p.y - 8); ctx.stroke();
+      // ring
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = isHooked ? '#3ce0c8' : isTarget ? '#ffd166' : (moving ? '#b7a6ff' : '#cbbfe8');
+      if (isTarget || isHooked) { ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16; }
+      ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.shadowBlur = 0;
+      if (isTarget) {
+        const pulse = 14 + Math.sin(time * 8) * 3;
+        ctx.strokeStyle = 'rgba(255,209,102,0.6)';
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(p.x, p.y, pulse, 0, Math.PI * 2); ctx.stroke();
+      }
+    }
+
+    // drones
+    for (const d of drones) {
+      const p = dronePos(d);
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(time * 3);
+      ctx.fillStyle = '#2a0f1c';
+      ctx.beginPath();
+      for (let i = 0; i < 16; i++) {
+        const r = i % 2 ? d.r * 0.7 : d.r * 1.15;
+        const ang = (i / 16) * Math.PI * 2;
+        ctx.lineTo(Math.cos(ang) * r, Math.sin(ang) * r);
+      }
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = '#ff4d6d'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.restore();
+      const blink = (Math.sin(time * 10 + d.x) > 0);
+      ctx.fillStyle = blink ? '#ff4d6d' : '#7a1f33';
+      ctx.shadowColor = '#ff4d6d'; ctx.shadowBlur = blink ? 14 : 0;
+      ctx.beginPath(); ctx.arc(p.x, p.y, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // rope
+    if (rope) {
+      const p = anchorPos(rope.a);
+      ctx.strokeStyle = '#e8fffb'; ctx.lineWidth = 2.5;
+      ctx.beginPath(); ctx.moveTo(player.x, player.y - 6); ctx.lineTo(p.x, p.y); ctx.stroke();
+    }
+    if (missFx) {
+      const k = 1 - missFx.t / 0.18;
+      ctx.strokeStyle = `rgba(232,255,251,${1 - k})`; ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.beginPath(); ctx.moveTo(player.x, player.y - 6);
+      ctx.lineTo(player.x + (missFx.x - player.x) * (0.4 + k * 0.6), player.y + (missFx.y - player.y) * (0.4 + k * 0.6));
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+
+    // particles
+    for (const p of particles) {
+      ctx.fillStyle = p.c + (p.life / p.max).toFixed(2) + ')';
+      ctx.fillRect(p.x - p.s / 2, p.y - p.s / 2, p.s, p.s);
+    }
+
+    if (state !== 'over' || player.y < FLOOR_Y) drawPlayer();
+
+    ctx.restore();
+
+    // off-screen up indicator
+    if (player.y - camY < 0) {
+      ctx.fillStyle = '#ffd166';
+      const sx = player.x - camX;
+      ctx.beginPath(); ctx.moveTo(sx, 8); ctx.lineTo(sx - 8, 22); ctx.lineTo(sx + 8, 22); ctx.fill();
+    }
+  }
+
+  function drawPlayer() {
+    // scarf
+    ctx.strokeStyle = '#ff9a3c'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(scarf[0].x, scarf[0].y);
+    for (let i = 1; i < scarf.length; i++) ctx.lineTo(scarf[i].x, scarf[i].y);
+    ctx.stroke();
+
+    ctx.save();
+    ctx.translate(player.x, player.y);
+    ctx.rotate(player.angle);
+    const swinging = !!rope;
+    const kick = Math.sin(time * 14) * (player.onLedge ? 0 : 0.5);
+    // legs
+    ctx.strokeStyle = '#1f2a44'; ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(0, 6); ctx.lineTo(-5 + kick * 4, 18);
+    ctx.moveTo(0, 6); ctx.lineTo(5 - kick * 4, 18);
+    ctx.stroke();
+    // body (hoodie)
+    ctx.fillStyle = '#3ce0c8';
+    ctx.beginPath(); ctx.ellipse(0, 0, 7, 10, 0, 0, Math.PI * 2); ctx.fill();
+    // arms
+    ctx.strokeStyle = '#2bb5a2'; ctx.lineWidth = 3.5;
+    ctx.beginPath();
+    if (swinging) { ctx.moveTo(0, -4); ctx.lineTo(0, -18); }
+    else { ctx.moveTo(-3, -3); ctx.lineTo(-11, 4 + kick * 3); ctx.moveTo(3, -3); ctx.lineTo(11, -4 - kick * 3); }
+    ctx.stroke();
+    // head
+    ctx.fillStyle = '#f2c79a';
+    ctx.beginPath(); ctx.arc(0, -13, 6.5, 0, Math.PI * 2); ctx.fill();
+    // hood / cap
+    ctx.fillStyle = '#26a58f';
+    ctx.beginPath(); ctx.arc(0, -14, 7, Math.PI * 1.05, Math.PI * 1.95); ctx.fill();
+    // goggles
+    ctx.fillStyle = '#1b1030';
+    ctx.fillRect(1, -15, 6, 3);
+    ctx.restore();
+    ctx.lineCap = 'butt';
+  }
+
+  // ---------- Loop ----------
+  let last = performance.now();
+  function frame(now) {
+    let dt = (now - last) / 1000; last = now;
+    dt = Math.min(dt, 1 / 30);
+    if (state === 'play') update(dt);
+    else if (state === 'over') {
+      time += dt; shake = Math.max(0, shake - dt * 30);
+      for (const p of particles) { p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.life -= dt; }
+      particles = particles.filter(p => p.life > 0);
+    } else if (state === 'title') {
+      time += dt;
+      camX += 40 * dt; // gentle drift behind the title card
+      while (lastAnchorX < camX + viewW + 800) spawnNext();
+    }
+    render();
+    requestAnimationFrame(frame);
+  }
+
+  // ---------- Input ----------
+  function isUI(e) { return e.target.closest && e.target.closest('button, .card'); }
+  cvs.addEventListener('pointerdown', e => { e.preventDefault(); press(); });
+  addEventListener('pointerup', release);
+  addEventListener('pointercancel', release);
+  addEventListener('blur', () => { release(); if (state === 'play') togglePause(); });
+  addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') {
+      e.preventDefault();
+      if (e.repeat) return;
+      if (state === 'title' || (state === 'over' && !$('overScreen').classList.contains('hidden'))) { start(); return; }
+      if (state === 'paused') { togglePause(); return; }
+      press();
+    } else if (e.code === 'KeyP' || e.code === 'Escape') {
+      togglePause();
+    } else if (e.code === 'KeyM') {
+      toggleMute();
+    }
+  });
+  addEventListener('keyup', e => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'KeyW') release();
+  });
+  function toggleMute() {
+    muted = !muted; store.set('skylineSwing.muted', muted);
+    $('muteBtn').textContent = muted ? '🔇' : '🔊';
+  }
+  $('muteBtn').addEventListener('click', e => { e.stopPropagation(); toggleMute(); e.currentTarget.blur(); });
+  $('pauseBtn').addEventListener('click', e => { e.stopPropagation(); togglePause(); e.currentTarget.blur(); });
+  $('startBtn').addEventListener('click', e => { e.currentTarget.blur(); start(); });
+  $('retryBtn').addEventListener('click', e => { e.currentTarget.blur(); start(); });
+  $('resumeBtn').addEventListener('click', e => { e.currentTarget.blur(); togglePause(); });
+  document.querySelectorAll('.overlay').forEach(o => o.addEventListener('pointerdown', e => e.stopPropagation()));
+
+  // expose a tiny hook for automated testing
+  window.__skyline = { get state() { return state; }, get player() { return player; }, get zone() { return zone; },
+                       findTarget: () => findTarget(), press, release, anchorPos, get rope() { return rope; } };
+
+  reset();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
