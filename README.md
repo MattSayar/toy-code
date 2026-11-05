@@ -67,7 +67,7 @@ A space survival game where players pilot a ship through an asteroid field. Dodg
 ### Skyline Swing
 [Play it now](https://code.mattsayar.com/skyline-swing.html)
 
-A side-scrolling swinging game. Hold (mouse, touch, or Space) to fire a grapple line at the glowing hook, then let go to fly toward the next one. Holding also reels you in to build speed. Don't fall to the street. The game gets harder every 250 m: hooks spread out, some start moving, drones appear, and your line gets shorter. Grab gems for bonus points. Your best distance is saved.
+A side-scrolling swinging game. Hold (mouse, touch, or Space) to fire a grapple line at the glowing hook, and let go to fly. Let go when the line turns gold for a Perfect release: a speed boost, a flip, and a bigger combo. Combos multiply every point you score. Fly through boost rings, bounce off striped awnings, skim past drones for Close Calls (with slow-mo), and grab power-ups: a Rocket that smashes drones, a gem Magnet, and a Shield that saves you once. A soundtrack plays and speeds up each zone, and the camera zooms out as you go faster. Every 250 m the city gets harder. Best score and distance are saved.
 
 ## Party Games
 
