@@ -106,6 +106,7 @@
     <h1>Skyline Swing</h1>
     <p><b>Hold</b> (mouse, touch, or Space) to fire your line at the glowing hook. <b>Let go</b> to fly.</p>
     <ul class="tips">
+      <li><span>🎯</span>The <b>dotted line</b> shows the hook you'll grab. Faded hooks are out of reach. Hold early and you'll grab the next hook as soon as it's in reach.</li>
       <li><span>✨</span>Let go when your line <b>turns gold</b> for a <b>Perfect</b>: a speed boost, a flip, and a bigger combo.</li>
       <li><span>🔥</span>Combos multiply <b>every</b> point. Keep the chain going!</li>
       <li><span>⭕</span>Fly through <b>rings</b> for a boost. Bounce off <b>awnings</b>.</li>
@@ -295,7 +296,7 @@
       t,
       spaceMin: 170 + 140 * t,
       spaceMax: 235 + 165 * t,
-      range: z >= 5 ? 405 - 95 * t : 415,
+      range: 480 - 60 * t,
       yMin: 70,
       yMax: 250 + (z >= 8 ? 90 : 50) * t,
       moveChance: z >= 3 ? 0.18 + 0.4 * t : 0,
@@ -384,16 +385,21 @@
   const anchorPos = a => ({ x: a.x, y: a.baseY + Math.sin(time * a.sp + a.ph) * a.amp });
   const dronePos = d => ({ x: d.x, y: d.baseY + Math.sin(time * d.sp + d.ph) * d.amp });
 
+  // Any hook that's above you (or nearly level) and within line range can be grabbed.
+  // Among those, prefer one up and ahead. `reach` is used to light up grabbable hooks.
+  let reach = new Set();
   function findTarget() {
     const R = diff(zone).range;
     let best = null, bestS = Infinity;
-    const ix = player.x + R * 0.45, iy = player.y - R * 0.65;
+    const ix = player.x + R * 0.45, iy = player.y - R * 0.6;
+    reach = new Set();
     for (const a of anchors) {
       const p = anchorPos(a);
-      if (p.x < player.x - 30 || p.y > player.y - 25) continue;
+      if (p.x < player.x - 100 || p.y > player.y - 5) continue;
       const dist = Math.hypot(p.x - player.x, p.y - player.y);
-      if (dist > R || dist < 40) continue;
-      const s = Math.hypot(p.x - ix, p.y - iy);
+      if (dist > R || dist < 35) continue;
+      reach.add(a);
+      const s = Math.hypot(p.x - ix, p.y - iy) + (p.x < player.x ? 150 : 0);
       if (s < bestS) { bestS = s; best = a; }
     }
     return best;
@@ -442,15 +448,18 @@
     if (player.rocket > 0) return;
     if (player.onLedge) { player.onLedge = false; player.vx = 340; player.vy = -500; }
     const a = findTarget();
-    if (a) {
-      const p = anchorPos(a);
-      rope = { a, len: Math.hypot(p.x - player.x, p.y - player.y), shot: 0 };
-      sfx.shoot();
-    } else {
+    if (a) attach(a);
+    else {
       const R = diff(zone).range;
       missFx = { x: player.x + R * 0.5, y: player.y - R * 0.6, t: 0.18 };
       sfx.miss();
     }
+  }
+  function attach(a) {
+    const p = anchorPos(a);
+    rope = { a, len: Math.hypot(p.x - player.x, p.y - player.y), shot: 0 };
+    missFx = null;
+    sfx.shoot();
   }
   function release() {
     holding = false;
@@ -656,6 +665,9 @@
     }
 
     target = (rope || player.rocket > 0) ? null : findTarget();
+    if (rope || player.rocket > 0) reach = new Set();
+    // still holding after a miss (or after a rocket)? grab the moment a hook comes into reach
+    if (holding && !rope && target && player.rocket <= 0 && !player.onLedge) attach(target);
     if (missFx) { missFx.t -= dt; if (missFx.t <= 0) missFx = null; }
     if (rope) rope.shot = Math.min(1, rope.shot + dt * 14);
 
@@ -962,6 +974,8 @@
     for (const a of anchors) {
       const p = anchorPos(a);
       const isTarget = a === target, isHooked = rope && rope.a === a, moving = a.amp > 0;
+      const inReach = reach.has(a) || isHooked || player.onLedge || state !== 'play';
+      ctx.globalAlpha = inReach ? 1 : 0.4;
       ctx.fillStyle = moving ? '#7a5cff' : '#4a3a7a';
       ctx.beginPath(); ctx.ellipse(p.x, p.y - 14, 16, 6, 0, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 1.5;
@@ -971,8 +985,13 @@
       ctx.lineWidth = 4;
       ctx.strokeStyle = isHooked ? '#3ce0c8' : isTarget ? '#ffd166' : (moving ? '#b7a6ff' : '#cbbfe8');
       if (isTarget || isHooked) { ctx.shadowColor = ctx.strokeStyle; ctx.shadowBlur = 16; }
-      ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); ctx.arc(p.x, p.y, isTarget ? 10 : 8, 0, Math.PI * 2); ctx.stroke();
       ctx.shadowBlur = 0;
+      if (reach.has(a) && !isTarget) {
+        ctx.fillStyle = 'rgba(255,209,102,0.55)';
+        ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.globalAlpha = 1;
       if (isTarget) {
         ctx.strokeStyle = 'rgba(255,209,102,0.6)'; ctx.lineWidth = 2;
         ctx.beginPath(); ctx.arc(p.x, p.y, 14 + Math.sin(time * 8) * 3, 0, Math.PI * 2); ctx.stroke();
@@ -1001,6 +1020,15 @@
     }
   }
   function drawRope() {
+    // aim line: shows exactly which hook you'll grab if you hold now
+    if (!rope && target && state === 'play' && player.rocket <= 0) {
+      const p = anchorPos(target);
+      ctx.strokeStyle = `rgba(255,209,102,${0.75 + Math.sin(time * 8) * 0.2})`;
+      ctx.shadowColor = '#ffd166'; ctx.shadowBlur = 8;
+      ctx.lineWidth = 3; ctx.setLineDash([7, 7]); ctx.lineDashOffset = -time * 40;
+      ctx.beginPath(); ctx.moveTo(player.x, player.y - 6); ctx.lineTo(p.x, p.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.lineDashOffset = 0; ctx.shadowBlur = 0;
+    }
     if (rope) {
       const p = anchorPos(rope.a);
       const perfect = inPerfectWindow();
